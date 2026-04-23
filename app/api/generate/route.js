@@ -3,25 +3,101 @@ import { NextResponse } from "next/server";
 const TONES = ["professional", "friendly", "sales"];
 const LANGUAGES = ["English", "Arabic"];
 
-function buildSystemPrompt(tone, language) {
-  const languageInstruction =
-    language === "Arabic"
+function detectUserIntent(message = "") {
+  const text = message.toLowerCase();
+
+  const angrySignals = [
+    "اكسر",
+    "هشتكي",
+    "غلط",
+    "تأخير",
+    "سيء",
+    "زفت",
+    "angry",
+    "bad",
+    "complaint",
+  ];
+
+  const salesSignals = [
+    "سعر",
+    "بكام",
+    "متاح",
+    "تفاصيل",
+    "price",
+    "how much",
+    "available",
+  ];
+
+  const isAngry = angrySignals.some((signal) => text.includes(signal));
+  const isSales = salesSignals.some((signal) => text.includes(signal));
+
+  let intent = "normal";
+
+  if (isAngry) intent = "angry";
+  else if (isSales) intent = "sales";
+
+  return intent;
+}
+
+function buildSystemPrompt(tone, language, intent) {
+  const isArabic = language === "Arabic";
+
+  const languageInstruction = isArabic
+    ? [
+        "Write in natural Egyptian Arabic (عامية مصرية) by default.",
+        "Keep the wording human, warm, and realistic like a real support agent.",
+        "Avoid robotic phrasing, stiff MSA, and literal translations.",
+        "Use simple words customers actually use in chat.",
+      ].join(" ")
+    : "Write in natural, clear English with human wording.";
+
+  const intentInstruction =
+    intent === "angry"
       ? [
-          "Write in Arabic.",
-          "Use clear, customer-friendly wording.",
-          "Choose Egyptian Arabic for casual/customer-chat style and Modern Standard Arabic for formal/business style.",
+          "Customer is angry.",
+          "You MUST start with: حقك علينا or معلش حصل مشكلة.",
+          "You MUST apologize clearly.",
+          "You MUST take responsibility.",
+          "You MUST offer immediate fix.",
+          "You MUST ask for order details.",
+          "Use ONLY natural Egyptian Arabic.",
         ].join(" ")
-      : "Write in natural, clear English.";
+      : intent === "sales"
+      ? [
+          "Customer wants to buy.",
+          "You MUST answer the question FIRST (price or availability).",
+          "Then highlight value.",
+          "Then include ONE clear CTA.",
+          "Use natural Egyptian Arabic only.",
+        ].join(" ")
+      : [
+          "Customer is normal.",
+          "Answer directly and clearly.",
+          "Do NOT add fake details.",
+        ].join(" ");
+
+  const toneInstruction =
+    tone === "sales" || intent === "sales"
+      ? "Use persuasive but respectful sales language and include one clear call to action."
+      : tone === "friendly"
+      ? "Use a friendly, conversational, human tone."
+      : "Use a professional, concise support tone.";
 
   return [
     "You are an expert customer support agent for a modern business.",
-    "Write one response to the customer message.",
     `Tone: ${tone}.`,
     languageInstruction,
-    "The response must be concise, natural, persuasive, and solution-oriented.",
-    "Acknowledge the customer concern, provide a helpful next step, and keep it human.",
-    "Avoid fluff, repetitive phrases, and generic AI wording.",
-    "Return only the final customer-facing message text.",
+    intentInstruction,
+    toneInstruction,
+    "Write one customer-facing reply only.",
+    "The response must be concise, natural, solution-oriented, and non-robotic.",
+    "Acknowledge the issue, provide a practical next step, and keep trust high.",
+    "Return only the final reply text.",
+    "STRICT RULES:",
+    "- Do NOT use formal Arabic",
+    "- Do NOT translate literally",
+    "- Do NOT ignore the customer question",
+    "- Do NOT invent fake information",
   ].join(" ");
 }
 
@@ -45,6 +121,8 @@ export async function POST(request) {
       return NextResponse.json({ error: "Server is missing GROQ_API_KEY." }, { status: 500 });
     }
 
+    const intent = detectUserIntent(message);
+
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -58,7 +136,7 @@ export async function POST(request) {
         messages: [
           {
             role: "system",
-            content: buildSystemPrompt(tone, language),
+            content: buildSystemPrompt(tone, language, intent),
           },
           {
             role: "user",
@@ -89,6 +167,7 @@ export async function POST(request) {
         reply,
         tone,
         language,
+        intent,
       },
     });
   } catch {
