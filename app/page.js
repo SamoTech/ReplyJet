@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 
 // ── Design Tokens ────────────────────────────────────────────────────
 const t = {
@@ -24,7 +25,6 @@ const t = {
   shadow:     "0 0 0 1px rgba(255,255,255,0.06), 0 4px 24px rgba(0,0,0,0.4)",
 };
 
-// ── Constants ────────────────────────────────────────────────────────
 const TONES = [
   { value: "professional", label: "Professional", icon: "💼" },
   { value: "friendly",     label: "Friendly",     icon: "😊" },
@@ -42,7 +42,6 @@ const INTENTS = {
   normal: { label: "Normal", icon: "💬", color: "#60a5fa",  dim: "rgba(96,165,250,0.12)"  },
 };
 
-// ── Reusable style helpers ───────────────────────────────────────────
 const card = {
   background: t.surface,
   border: `1px solid ${t.border}`,
@@ -79,23 +78,25 @@ const segmentBase = (active) => ({
   fontFamily: "inherit",
 });
 
-// ── Component ────────────────────────────────────────────────────────
+const NAV_LINKS = [
+  { href: "/history",  label: "History",  icon: "🕑" },
+  { href: "/settings", label: "Settings", icon: "⚙️" },
+  { href: "/about",    label: "About",    icon: "ℹ️" },
+];
+
 export default function HomePage() {
-  const [message,  setMessage]  = useState("");
-  const [tone,     setTone]     = useState("professional");
-  const [language, setLanguage] = useState("Arabic");
-  const [reply,    setReply]    = useState("");
-  const [intent,   setIntent]   = useState("");
-  const [loading,  setLoading]  = useState(false);
-  const [error,    setError]    = useState("");
-  const [copied,   setCopied]   = useState(false);
+  const [message,   setMessage]   = useState("");
+  const [tone,      setTone]      = useState("professional");
+  const [language,  setLanguage]  = useState("Arabic");
+  const [reply,     setReply]     = useState("");
+  const [intent,    setIntent]    = useState("");
+  const [loading,   setLoading]   = useState(false);
+  const [error,     setError]     = useState("");
+  const [copied,    setCopied]    = useState(false);
   const [charCount, setCharCount] = useState(0);
 
   const handleGenerate = async () => {
-    setError("");
-    setReply("");
-    setIntent("");
-    setCopied(false);
+    setError(""); setReply(""); setIntent(""); setCopied(false);
     if (!message.trim()) { setError("Please enter a customer message."); return; }
     setLoading(true);
     try {
@@ -106,7 +107,7 @@ export default function HomePage() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Failed to generate reply."); return; }
-      setReply(data?.data?.reply  || "");
+      setReply(data?.data?.reply   || "");
       setIntent(data?.data?.intent || "");
     } catch {
       setError("Network error. Please try again.");
@@ -134,37 +135,118 @@ export default function HomePage() {
   const isArabic   = language === "Arabic";
 
   return (
-    <div style={{ minHeight: "100vh", background: t.bg, color: t.text, padding: "0 16px 60px" }}>
+    <div style={{ minHeight: "100vh", background: t.bg, color: t.text }}>
 
-      {/* ── Header ── */}
-      <header style={{
-        maxWidth: 720,
-        margin:   "0 auto",
-        padding:  "32px 0 28px",
-        display:  "flex",
-        alignItems: "center",
-        gap: 12,
-        borderBottom: `1px solid ${t.border}`,
-        marginBottom: 32,
+      {/* ── Top Nav Bar ── */}
+      <nav style={{
+        position:       "sticky",
+        top:            0,
+        zIndex:         100,
+        background:     "rgba(13,13,13,0.85)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        borderBottom:   `1px solid ${t.border}`,
       }}>
-        {/* Logo mark */}
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="32" height="32" rx="8" fill={t.accentDim}/>
-          <rect x="5" y="5" width="16" height="13" rx="3" fill={t.accent}/>
-          <polygon points="7,18 4,25 13,18" fill={t.accent}/>
-          <polygon points="17,8 13,15 15,15 11,22 19,13 17,13" fill={t.bg}/>
-        </svg>
-        <div>
-          <div style={{ fontSize: "18px", fontWeight: 700, letterSpacing: "-0.3px", lineHeight: 1.2 }}>
-            Reply<span style={{ color: t.accent }}>Jet</span>
-          </div>
-          <div style={{ fontSize: "11px", color: t.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            AI Reply Engine
+        <div style={{
+          maxWidth:       720,
+          margin:         "0 auto",
+          padding:        "0 16px",
+          height:         56,
+          display:        "flex",
+          alignItems:     "center",
+          justifyContent: "space-between",
+        }}>
+
+          {/* Logo */}
+          <Link href="/" style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center", gap: 10 }}>
+            <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect width="32" height="32" rx="8" fill={t.accentDim}/>
+              <rect x="5" y="5" width="16" height="13" rx="3" fill={t.accent}/>
+              <polygon points="7,18 4,25 13,18" fill={t.accent}/>
+              <polygon points="17,8 13,15 15,15 11,22 19,13 17,13" fill={t.bg}/>
+            </svg>
+            <span style={{ fontSize: "16px", fontWeight: 700, letterSpacing: "-0.3px" }}>
+              Reply<span style={{ color: t.accent }}>Jet</span>
+            </span>
+          </Link>
+
+          {/* Nav links */}
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            {NAV_LINKS.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                style={{
+                  display:        "inline-flex",
+                  alignItems:     "center",
+                  gap:            5,
+                  padding:        "6px 12px",
+                  borderRadius:   t.radiusSm,
+                  fontSize:       "13px",
+                  fontWeight:     500,
+                  color:          t.muted,
+                  textDecoration: "none",
+                  transition:     "color 0.15s, background 0.15s",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = t.text; e.currentTarget.style.background = t.surface2; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = t.muted; e.currentTarget.style.background = "transparent"; }}
+              >
+                <span style={{ fontSize: 14 }}>{link.icon}</span>
+                <span>{link.label}</span>
+              </Link>
+            ))}
           </div>
         </div>
-      </header>
+      </nav>
 
-      <main style={{ maxWidth: 720, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* ── Page Hero ── */}
+      <div style={{
+        maxWidth:  720,
+        margin:    "0 auto",
+        padding:   "48px 16px 32px",
+        textAlign: "center",
+      }}>
+        <div style={{
+          display:        "inline-flex",
+          alignItems:     "center",
+          gap:            6,
+          fontSize:       "11px",
+          fontWeight:     600,
+          letterSpacing:  "0.1em",
+          textTransform:  "uppercase",
+          color:          t.accent,
+          background:     t.accentDim,
+          border:         `1px solid rgba(0,180,216,0.2)`,
+          borderRadius:   999,
+          padding:        "4px 12px",
+          marginBottom:   16,
+        }}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill={t.accent}><circle cx="12" cy="12" r="8"/></svg>
+          AI-Powered
+        </div>
+        <h1 style={{
+          fontSize:     "clamp(28px, 5vw, 42px)",
+          fontWeight:   800,
+          letterSpacing: "-1px",
+          lineHeight:   1.15,
+          margin:       "0 0 10px",
+          color:        t.text,
+        }}>
+          Reply<span style={{ color: t.accent }}>Jet</span>
+        </h1>
+        <p style={{
+          fontSize:   "15px",
+          color:      t.muted,
+          margin:     0,
+          lineHeight: 1.6,
+        }}>
+          Generate smart customer replies in seconds —{" "}
+          <span style={{ color: t.text }}>Arabic & English</span>
+        </p>
+      </div>
+
+      {/* ── Main Content ── */}
+      <main style={{ maxWidth: 720, margin: "0 auto", padding: "0 16px 80px", display: "flex", flexDirection: "column", gap: 16 }}>
 
         {/* ── Input Card ── */}
         <div style={card}>
@@ -178,34 +260,40 @@ export default function HomePage() {
               onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
               placeholder="Paste the customer message here..."
               style={{
-                width:         "100%",
-                background:    t.surface2,
-                border:        `1px solid ${t.border}`,
-                borderRadius:  t.radiusSm,
-                color:         t.text,
-                fontSize:      "14px",
-                lineHeight:    1.6,
-                padding:       "12px",
-                resize:        "vertical",
-                outline:       "none",
-                fontFamily:    "inherit",
-                boxSizing:     "border-box",
-                transition:    "border-color 0.15s",
+                width:        "100%",
+                background:   t.surface2,
+                border:       `1px solid ${t.border}`,
+                borderRadius: t.radiusSm,
+                color:        t.text,
+                fontSize:     "14px",
+                lineHeight:   1.6,
+                padding:      "12px 12px 28px",
+                resize:       "vertical",
+                outline:      "none",
+                fontFamily:   "inherit",
+                boxSizing:    "border-box",
+                transition:   "border-color 0.15s",
+                minHeight:    120,
               }}
-              onFocus={(e)  => (e.target.style.borderColor = t.accent)}
-              onBlur={(e)   => (e.target.style.borderColor = t.border)}
+              onFocus={(e) => (e.target.style.borderColor = t.accent)}
+              onBlur={(e)  => (e.target.style.borderColor = t.border)}
             />
-            {charCount > 0 && (
-              <span style={{
-                position:  "absolute", bottom: 8, right: 10,
-                fontSize:  "11px", color: t.faint, pointerEvents: "none",
-              }}>
-                {charCount}
-              </span>
-            )}
+            <span style={{
+              position:      "absolute",
+              bottom:        10,
+              right:         12,
+              fontSize:      "11px",
+              color:         charCount > 0 ? t.faint : "transparent",
+              pointerEvents: "none",
+              transition:    "color 0.15s",
+            }}>
+              {charCount} chars
+            </span>
           </div>
           <p style={{ margin: "6px 0 0", fontSize: "11px", color: t.faint }}>
-            Tip: Press <kbd style={{ background: t.surface2, border: `1px solid ${t.border}`, borderRadius: 3, padding: "1px 4px", fontSize: 10 }}>Ctrl+Enter</kbd> to generate
+            Tip: Press{" "}
+            <kbd style={{ background: t.surface2, border: `1px solid ${t.border}`, borderRadius: 3, padding: "1px 4px", fontSize: 10 }}>Ctrl+Enter</kbd>
+            {" "}to generate
           </p>
         </div>
 
@@ -215,22 +303,10 @@ export default function HomePage() {
           {/* Tone */}
           <div style={card}>
             <label style={label}>Tone</label>
-            <div style={{
-              display:       "flex",
-              background:    t.surface2,
-              borderRadius:  t.radiusSm,
-              border:        `1px solid ${t.border}`,
-              padding:       3,
-              gap:           2,
-            }}>
+            <div style={{ display: "flex", background: t.surface2, borderRadius: t.radiusSm, border: `1px solid ${t.border}`, padding: 3, gap: 2 }}>
               {TONES.map((item) => (
-                <button
-                  key={item.value}
-                  onClick={() => setTone(item.value)}
-                  style={segmentBase(tone === item.value)}
-                >
-                  <span>{item.icon}</span>
-                  <span>{item.label}</span>
+                <button key={item.value} onClick={() => setTone(item.value)} style={segmentBase(tone === item.value)}>
+                  <span>{item.icon}</span><span>{item.label}</span>
                 </button>
               ))}
             </div>
@@ -239,22 +315,10 @@ export default function HomePage() {
           {/* Language */}
           <div style={card}>
             <label style={label}>Language</label>
-            <div style={{
-              display:       "flex",
-              background:    t.surface2,
-              borderRadius:  t.radiusSm,
-              border:        `1px solid ${t.border}`,
-              padding:       3,
-              gap:           2,
-            }}>
+            <div style={{ display: "flex", background: t.surface2, borderRadius: t.radiusSm, border: `1px solid ${t.border}`, padding: 3, gap: 2 }}>
               {LANGUAGES.map((item) => (
-                <button
-                  key={item.value}
-                  onClick={() => setLanguage(item.value)}
-                  style={segmentBase(language === item.value)}
-                >
-                  <span>{item.flag}</span>
-                  <span>{item.label}</span>
+                <button key={item.value} onClick={() => setLanguage(item.value)} style={segmentBase(language === item.value)}>
+                  <span>{item.flag}</span><span>{item.label}</span>
                 </button>
               ))}
             </div>
@@ -266,25 +330,25 @@ export default function HomePage() {
           onClick={handleGenerate}
           disabled={loading}
           style={{
-            width:         "100%",
-            padding:       "14px",
-            background:    loading ? t.faint : t.accent,
-            color:         loading ? t.muted : "#000",
-            border:        "none",
-            borderRadius:  t.radius,
-            fontSize:      "15px",
-            fontWeight:    700,
-            cursor:        loading ? "not-allowed" : "pointer",
-            fontFamily:    "inherit",
-            letterSpacing: "0.02em",
-            transition:    "background 0.15s, transform 0.1s",
-            display:       "flex",
-            alignItems:    "center",
+            width:          "100%",
+            padding:        "14px",
+            background:     loading ? t.faint : t.accent,
+            color:          loading ? t.muted : "#000",
+            border:         "none",
+            borderRadius:   t.radius,
+            fontSize:       "15px",
+            fontWeight:     700,
+            cursor:         loading ? "not-allowed" : "pointer",
+            fontFamily:     "inherit",
+            letterSpacing:  "0.02em",
+            transition:     "background 0.15s, transform 0.1s",
+            display:        "flex",
+            alignItems:     "center",
             justifyContent: "center",
-            gap:           8,
+            gap:            8,
           }}
-          onMouseEnter={(e) => { if (!loading) e.target.style.background = t.accentHov; }}
-          onMouseLeave={(e) => { if (!loading) e.target.style.background = t.accent; }}
+          onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = t.accentHov; }}
+          onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = t.accent; }}
         >
           {loading ? (
             <>
@@ -323,26 +387,22 @@ export default function HomePage() {
 
         {/* ── Reply Card ── */}
         {reply && (
-          <div style={{
-            ...card,
-            border: `1px solid ${intentMeta?.color}30 ?? ${t.border}`,
-          }}>
-            {/* Header row */}
+          <div style={{ ...card, border: `1px solid ${intentMeta?.color ?? t.accent}30` }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
               <span style={{ fontSize: "12px", fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase", color: t.muted }}>
                 Generated Reply
               </span>
               {intentMeta && (
                 <span style={{
-                  display:      "inline-flex",
-                  alignItems:   "center",
-                  gap:          5,
-                  fontSize:     "11px",
-                  fontWeight:   600,
-                  padding:      "3px 10px",
-                  borderRadius: 999,
-                  background:   intentMeta.dim,
-                  color:        intentMeta.color,
+                  display:       "inline-flex",
+                  alignItems:    "center",
+                  gap:           5,
+                  fontSize:      "11px",
+                  fontWeight:    600,
+                  padding:       "3px 10px",
+                  borderRadius:  999,
+                  background:    intentMeta.dim,
+                  color:         intentMeta.color,
                   letterSpacing: "0.04em",
                   textTransform: "uppercase",
                 }}>
@@ -351,7 +411,6 @@ export default function HomePage() {
               )}
             </div>
 
-            {/* Reply text */}
             <div style={{
               background:   t.surface2,
               border:       `1px solid ${t.border}`,
@@ -368,7 +427,6 @@ export default function HomePage() {
               {reply}
             </div>
 
-            {/* Copy button */}
             <button
               onClick={handleCopy}
               style={{
@@ -399,7 +457,6 @@ export default function HomePage() {
 
       </main>
 
-      {/* ── Spin keyframe ── */}
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         * { box-sizing: border-box; }
