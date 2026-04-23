@@ -50,7 +50,7 @@ const card = {
   boxShadow: t.shadow,
 };
 
-const label = {
+const labelStyle = {
   display: "block",
   fontSize: "12px",
   fontWeight: 600,
@@ -84,6 +84,16 @@ const NAV_LINKS = [
   { href: "/about",    label: "About",    icon: "ℹ️" },
 ];
 
+// ── Save to history ──────────────────────────────────────────────────
+function saveToHistory({ message, tone, language, reply, intent }) {
+  try {
+    const entry = { id: Date.now(), ts: Date.now(), message, tone, language, reply, intent };
+    const prev  = JSON.parse(localStorage.getItem("replyjet_history") || "[]");
+    localStorage.setItem("replyjet_history", JSON.stringify([entry, ...prev].slice(0, 50)));
+  } catch { /* localStorage blocked in some envs — silent fail */ }
+}
+
+// ── Component ────────────────────────────────────────────────────────
 export default function HomePage() {
   const [message,   setMessage]   = useState("");
   const [tone,      setTone]      = useState("professional");
@@ -107,8 +117,14 @@ export default function HomePage() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Failed to generate reply."); return; }
-      setReply(data?.data?.reply   || "");
-      setIntent(data?.data?.intent || "");
+      const generatedReply  = data?.data?.reply  || "";
+      const detectedIntent  = data?.data?.intent || "";
+      setReply(generatedReply);
+      setIntent(detectedIntent);
+      // ── Wire history ──
+      if (generatedReply) {
+        saveToHistory({ message, tone, language, reply: generatedReply, intent: detectedIntent });
+      }
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -156,10 +172,9 @@ export default function HomePage() {
           alignItems:     "center",
           justifyContent: "space-between",
         }}>
-
           {/* Logo */}
           <Link href="/" style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center", gap: 10 }}>
-            <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg width="28" height="28" viewBox="0 0 32 32" fill="none">
               <rect width="32" height="32" rx="8" fill={t.accentDim}/>
               <rect x="5" y="5" width="16" height="13" rx="3" fill={t.accent}/>
               <polygon points="7,18 4,25 13,18" fill={t.accent}/>
@@ -200,46 +215,36 @@ export default function HomePage() {
       </nav>
 
       {/* ── Page Hero ── */}
-      <div style={{
-        maxWidth:  720,
-        margin:    "0 auto",
-        padding:   "48px 16px 32px",
-        textAlign: "center",
-      }}>
+      <div style={{ maxWidth: 720, margin: "0 auto", padding: "48px 16px 32px", textAlign: "center" }}>
         <div style={{
-          display:        "inline-flex",
-          alignItems:     "center",
-          gap:            6,
-          fontSize:       "11px",
-          fontWeight:     600,
-          letterSpacing:  "0.1em",
-          textTransform:  "uppercase",
-          color:          t.accent,
-          background:     t.accentDim,
-          border:         `1px solid rgba(0,180,216,0.2)`,
-          borderRadius:   999,
-          padding:        "4px 12px",
-          marginBottom:   16,
+          display:       "inline-flex",
+          alignItems:    "center",
+          gap:           6,
+          fontSize:      "11px",
+          fontWeight:    600,
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+          color:         t.accent,
+          background:    t.accentDim,
+          border:        "1px solid rgba(0,180,216,0.2)",
+          borderRadius:  999,
+          padding:       "4px 12px",
+          marginBottom:  16,
         }}>
           <svg width="10" height="10" viewBox="0 0 24 24" fill={t.accent}><circle cx="12" cy="12" r="8"/></svg>
           AI-Powered
         </div>
         <h1 style={{
-          fontSize:     "clamp(28px, 5vw, 42px)",
-          fontWeight:   800,
+          fontSize:      "clamp(28px, 5vw, 42px)",
+          fontWeight:    800,
           letterSpacing: "-1px",
-          lineHeight:   1.15,
-          margin:       "0 0 10px",
-          color:        t.text,
+          lineHeight:    1.15,
+          margin:        "0 0 10px",
+          color:         t.text,
         }}>
           Reply<span style={{ color: t.accent }}>Jet</span>
         </h1>
-        <p style={{
-          fontSize:   "15px",
-          color:      t.muted,
-          margin:     0,
-          lineHeight: 1.6,
-        }}>
+        <p style={{ fontSize: "15px", color: t.muted, margin: 0, lineHeight: 1.6 }}>
           Generate smart customer replies in seconds —{" "}
           <span style={{ color: t.text }}>Arabic & English</span>
         </p>
@@ -250,7 +255,7 @@ export default function HomePage() {
 
         {/* ── Input Card ── */}
         <div style={card}>
-          <label style={label} htmlFor="message">Customer message</label>
+          <label style={labelStyle} htmlFor="message">Customer message</label>
           <div style={{ position: "relative" }}>
             <textarea
               id="message"
@@ -299,10 +304,8 @@ export default function HomePage() {
 
         {/* ── Controls Row ── */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-
-          {/* Tone */}
           <div style={card}>
-            <label style={label}>Tone</label>
+            <label style={labelStyle}>Tone</label>
             <div style={{ display: "flex", background: t.surface2, borderRadius: t.radiusSm, border: `1px solid ${t.border}`, padding: 3, gap: 2 }}>
               {TONES.map((item) => (
                 <button key={item.value} onClick={() => setTone(item.value)} style={segmentBase(tone === item.value)}>
@@ -311,10 +314,8 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-
-          {/* Language */}
           <div style={card}>
-            <label style={label}>Language</label>
+            <label style={labelStyle}>Language</label>
             <div style={{ display: "flex", background: t.surface2, borderRadius: t.radiusSm, border: `1px solid ${t.border}`, padding: 3, gap: 2 }}>
               {LANGUAGES.map((item) => (
                 <button key={item.value} onClick={() => setLanguage(item.value)} style={segmentBase(language === item.value)}>
@@ -341,7 +342,7 @@ export default function HomePage() {
             cursor:         loading ? "not-allowed" : "pointer",
             fontFamily:     "inherit",
             letterSpacing:  "0.02em",
-            transition:     "background 0.15s, transform 0.1s",
+            transition:     "background 0.15s",
             display:        "flex",
             alignItems:     "center",
             justifyContent: "center",
@@ -427,31 +428,38 @@ export default function HomePage() {
               {reply}
             </div>
 
-            <button
-              onClick={handleCopy}
-              style={{
-                marginTop:    "12px",
-                padding:      "8px 16px",
-                background:   copied ? t.successDim : t.surface2,
-                color:        copied ? t.success : t.muted,
-                border:       `1px solid ${copied ? t.success + "40" : t.border}`,
-                borderRadius: t.radiusSm,
-                cursor:       "pointer",
-                fontSize:     "13px",
-                fontWeight:   500,
-                fontFamily:   "inherit",
-                display:      "inline-flex",
-                alignItems:   "center",
-                gap:          6,
-                transition:   "all 0.15s",
-              }}
-            >
-              {copied ? (
-                <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!</>
-              ) : (
-                <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy reply</>
-              )}
-            </button>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
+              <button
+                onClick={handleCopy}
+                style={{
+                  padding:      "8px 16px",
+                  background:   copied ? t.successDim : t.surface2,
+                  color:        copied ? t.success : t.muted,
+                  border:       `1px solid ${copied ? t.success + "40" : t.border}`,
+                  borderRadius: t.radiusSm,
+                  cursor:       "pointer",
+                  fontSize:     "13px",
+                  fontWeight:   500,
+                  fontFamily:   "inherit",
+                  display:      "inline-flex",
+                  alignItems:   "center",
+                  gap:          6,
+                  transition:   "all 0.15s",
+                }}
+              >
+                {copied ? (
+                  <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!</>
+                ) : (
+                  <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy reply</>
+                )}
+              </button>
+              <Link href="/history" style={{ fontSize: "12px", color: t.muted, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4, transition: "color 0.15s" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = t.accent)}
+                onMouseLeave={(e) => (e.currentTarget.style.color = t.muted)}
+              >
+                🕑 View history
+              </Link>
+            </div>
           </div>
         )}
 
