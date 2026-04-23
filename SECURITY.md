@@ -10,9 +10,9 @@
 
 If you discover a security vulnerability in ReplyJet, please **do not** open a public GitHub issue.
 
-Instead, contact us privately:
+Instead, contact privately:
 
-1. Email: security@samotech.io *(or open a private GitHub Security Advisory)*
+1. Email: samo.hossam@gmail.com
 2. Include: description, steps to reproduce, potential impact
 3. We will respond within 48 hours
 
