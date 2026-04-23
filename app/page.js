@@ -3,21 +3,19 @@
 import { useState } from "react";
 
 const tones = ["professional", "friendly", "sales"];
-const languages = ["English", "Arabic"];
+const languages = ["Arabic", "English"];
 
 export default function HomePage() {
   const [message, setMessage] = useState("");
   const [tone, setTone] = useState("professional");
-  const [language, setLanguage] = useState("English");
-  const [result, setResult] = useState("");
-  const [error, setError] = useState("");
+  const [language, setLanguage] = useState("Arabic");
+  const [reply, setReply] = useState("");
   const [loading, setLoading] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [error, setError] = useState("");
 
   const handleGenerate = async () => {
-    setCopied(false);
     setError("");
-    setResult("");
+    setReply("");
 
     if (!message.trim()) {
       setError("Please enter a customer message.");
@@ -33,14 +31,14 @@ export default function HomePage() {
         body: JSON.stringify({ message, tone, language }),
       });
 
-      const payload = await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
-        setError(payload.error || "Could not generate a reply.");
+        setError(data.error || "Failed to generate reply.");
         return;
       }
 
-      setResult(payload.data.reply || "");
+      setReply(data?.data?.reply || "");
     } catch {
       setError("Network error. Please try again.");
     } finally {
@@ -48,192 +46,57 @@ export default function HomePage() {
     }
   };
 
-  const handleCopy = async () => {
-    if (!result) return;
-    await navigator.clipboard.writeText(result);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1200);
-  };
-
   return (
-    <main style={styles.container}>
-      <div style={styles.card}>
-        <h1 style={styles.title}>ReplyJet</h1>
-        <p style={styles.subtitle}>Generate polished customer replies in seconds.</p>
+    <main style={{ maxWidth: 720, margin: "40px auto", padding: 16, fontFamily: "Arial, sans-serif" }}>
+      <h1>ReplyJet</h1>
 
-        <label style={styles.label} htmlFor="message">
-          Customer Message
-        </label>
-        <textarea
-          id="message"
-          style={styles.textarea}
-          placeholder="Paste the customer message here..."
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          rows={6}
-        />
+      <label htmlFor="message">Customer message</label>
+      <textarea
+        id="message"
+        rows={7}
+        style={{ width: "100%", marginTop: 8, marginBottom: 16 }}
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+      />
 
-        <div style={styles.row}>
-          <div style={styles.field}>
-            <label style={styles.label} htmlFor="tone">
-              Tone
-            </label>
-            <select id="tone" style={styles.select} value={tone} onChange={(e) => setTone(e.target.value)}>
-              {tones.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div style={styles.field}>
-            <label style={styles.label} htmlFor="language">
-              Language
-            </label>
-            <select
-              id="language"
-              style={styles.select}
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-            >
-              {languages.map((item) => (
-                <option key={item} value={item}>
-                  {item}
-                </option>
-              ))}
-            </select>
-          </div>
+      <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
+        <div>
+          <label htmlFor="tone">Tone</label>
+          <br />
+          <select id="tone" value={tone} onChange={(e) => setTone(e.target.value)}>
+            {tones.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <button style={styles.button} onClick={handleGenerate} disabled={loading}>
-          {loading ? "Generating..." : "Generate Reply"}
-        </button>
-
-        {error ? <p style={styles.error}>{error}</p> : null}
-
-        {result ? (
-          <section style={styles.resultBox}>
-            <div style={styles.resultHeader}>
-              <h2 style={styles.resultTitle}>Generated Reply</h2>
-              <button style={styles.copyButton} onClick={handleCopy}>
-                {copied ? "Copied" : "Copy"}
-              </button>
-            </div>
-            <p style={styles.resultText}>{result}</p>
-          </section>
-        ) : null}
+        <div>
+          <label htmlFor="language">Language</label>
+          <br />
+          <select id="language" value={language} onChange={(e) => setLanguage(e.target.value)}>
+            {languages.map((item) => (
+              <option key={item} value={item}>
+                {item}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+
+      <button onClick={handleGenerate} disabled={loading}>
+        {loading ? "Generating..." : "Generate"}
+      </button>
+
+      {error ? <p style={{ color: "crimson" }}>{error}</p> : null}
+
+      {reply ? (
+        <div style={{ marginTop: 16 }}>
+          <h2>Reply</h2>
+          <pre style={{ whiteSpace: "pre-wrap" }}>{reply}</pre>
+        </div>
+      ) : null}
     </main>
   );
 }
-
-const styles = {
-  container: {
-    minHeight: "100vh",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: "24px",
-    background: "#f5f7fb",
-    fontFamily: "Inter, Arial, sans-serif",
-  },
-  card: {
-    width: "100%",
-    maxWidth: "760px",
-    background: "#fff",
-    borderRadius: "14px",
-    padding: "24px",
-    boxShadow: "0 10px 30px rgba(0, 0, 0, 0.07)",
-  },
-  title: {
-    margin: 0,
-    fontSize: "1.8rem",
-    color: "#111827",
-  },
-  subtitle: {
-    marginTop: "8px",
-    marginBottom: "20px",
-    color: "#4b5563",
-  },
-  label: {
-    display: "block",
-    marginBottom: "8px",
-    fontWeight: 600,
-    color: "#1f2937",
-    fontSize: "0.92rem",
-  },
-  textarea: {
-    width: "100%",
-    borderRadius: "10px",
-    border: "1px solid #d1d5db",
-    padding: "12px",
-    fontSize: "1rem",
-    outline: "none",
-    resize: "vertical",
-    marginBottom: "16px",
-  },
-  row: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "12px",
-    marginBottom: "16px",
-  },
-  field: {
-    width: "100%",
-  },
-  select: {
-    width: "100%",
-    borderRadius: "10px",
-    border: "1px solid #d1d5db",
-    padding: "10px",
-    fontSize: "0.95rem",
-    background: "white",
-  },
-  button: {
-    width: "100%",
-    border: "none",
-    borderRadius: "10px",
-    padding: "12px 14px",
-    background: "#2563eb",
-    color: "#fff",
-    fontWeight: 700,
-    fontSize: "1rem",
-    cursor: "pointer",
-  },
-  error: {
-    marginTop: "12px",
-    color: "#b91c1c",
-    fontWeight: 500,
-  },
-  resultBox: {
-    marginTop: "20px",
-    border: "1px solid #dbe3f0",
-    borderRadius: "10px",
-    padding: "16px",
-    background: "#fafcff",
-  },
-  resultHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "10px",
-  },
-  resultTitle: {
-    margin: 0,
-    fontSize: "1rem",
-  },
-  copyButton: {
-    border: "1px solid #cbd5e1",
-    borderRadius: "8px",
-    padding: "6px 10px",
-    background: "white",
-    cursor: "pointer",
-  },
-  resultText: {
-    margin: 0,
-    whiteSpace: "pre-wrap",
-    lineHeight: 1.6,
-    color: "#1f2937",
-  },
-};
