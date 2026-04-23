@@ -1,21 +1,105 @@
-MIT License
+ReplyJet Commercial License
+Copyright (c) 2026 SamoTech. All rights reserved.
 
-Copyright (c) 2026 Ossama Hashim
+================================================================================
+REPLYJET PROPRIETARY SOFTWARE LICENSE AGREEMENT
+================================================================================
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This License Agreement ("Agreement") is entered into between SamoTech
+("Licensor") and the individual or entity accessing or using ReplyJet
+("Licensee").
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+By using, copying, modifying, or distributing this software, you agree to be
+bound by the terms of this Agreement.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+--------------------------------------------------------------------------------
+1. GRANT OF LICENSE
+--------------------------------------------------------------------------------
+
+Subject to the terms of this Agreement, Licensor grants Licensee a limited,
+non-exclusive, non-transferable, non-sublicensable license to:
+
+  (a) Use the Software for Licensee's internal business purposes.
+  (b) Access the Software solely via the official hosted service at
+      replyjet.io or any domain operated by SamoTech.
+
+--------------------------------------------------------------------------------
+2. RESTRICTIONS
+--------------------------------------------------------------------------------
+
+Licensee shall NOT:
+
+  (a) Copy, modify, merge, publish, distribute, sublicense, or sell copies of
+      the Software or any portion thereof.
+  (b) Reverse engineer, decompile, disassemble, or attempt to derive the source
+      code of the Software.
+  (c) Remove or alter any proprietary notices, labels, or marks on the Software.
+  (d) Use the Software to build a competing product or service.
+  (e) Resell, relicense, or offer the Software as a service to third parties
+      without prior written consent from Licensor.
+
+--------------------------------------------------------------------------------
+3. OWNERSHIP
+--------------------------------------------------------------------------------
+
+The Software and all intellectual property rights therein are and shall remain
+the exclusive property of SamoTech. This Agreement does not grant Licensee any
+rights to trademarks, service marks, or trade names of SamoTech.
+
+--------------------------------------------------------------------------------
+4. OPEN SOURCE CONTRIBUTIONS
+--------------------------------------------------------------------------------
+
+Contributions to the public GitHub repository (github.com/SamoTech/ReplyJet)
+are welcome under the terms defined in CONTRIBUTING.md. By submitting a
+contribution, Licensee grants SamoTech an irrevocable, worldwide, royalty-free
+license to use, reproduce, modify, and distribute such contributions as part of
+the Software.
+
+--------------------------------------------------------------------------------
+5. DISCLAIMER OF WARRANTIES
+--------------------------------------------------------------------------------
+
+THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. LICENSOR DOES NOT WARRANT THAT
+THE SOFTWARE WILL BE ERROR-FREE OR UNINTERRUPTED.
+
+--------------------------------------------------------------------------------
+6. LIMITATION OF LIABILITY
+--------------------------------------------------------------------------------
+
+IN NO EVENT SHALL LICENSOR BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
+EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING LOSS OF PROFITS, DATA, OR
+GOODWILL) ARISING OUT OF OR IN CONNECTION WITH THIS AGREEMENT OR THE USE OF
+THE SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+--------------------------------------------------------------------------------
+7. TERMINATION
+--------------------------------------------------------------------------------
+
+This Agreement is effective until terminated. Licensor may terminate this
+Agreement immediately upon written notice if Licensee breaches any term herein.
+Upon termination, Licensee must cease all use of the Software and destroy all
+copies in its possession.
+
+--------------------------------------------------------------------------------
+8. GOVERNING LAW
+--------------------------------------------------------------------------------
+
+This Agreement shall be governed by and construed in accordance with applicable
+law. Any disputes shall be resolved in the jurisdiction where SamoTech is
+registered.
+
+--------------------------------------------------------------------------------
+9. CONTACT
+--------------------------------------------------------------------------------
+
+For licensing inquiries, partnership requests, or permissions beyond the scope
+of this Agreement, contact:
+
+  SamoTech
+  Email: legal@samotech.io
+  Website: https://samotech.io
+
+================================================================================

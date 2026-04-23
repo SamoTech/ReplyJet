@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 320" width="1280" height="320">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a0a"/>
+      <stop offset="100%" stop-color="#0f1923"/>
+    </linearGradient>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#ffffff" stroke-width="0.3" opacity="0.06"/>
+    </pattern>
+  </defs>
+  <rect width="1280" height="320" fill="url(#bg)"/>
+  <rect width="1280" height="320" fill="url(#grid)"/>
+  <ellipse cx="160" cy="160" rx="140" ry="120" fill="#00B4D8" opacity="0.06"/>
+  <ellipse cx="1120" cy="160" rx="120" ry="100" fill="#00B4D8" opacity="0.04"/>
+  <rect x="0" y="0" width="1280" height="3" fill="#00B4D8" opacity="0.8"/>
+  <rect x="160" y="108" width="72" height="56" rx="11" fill="#00B4D8"/>
+  <polygon points="172,164 162,188 192,164" fill="#00B4D8"/>
+  <polygon points="206,118 194,144 202,144 190,172 216,138 206,138" fill="#0a0a0a"/>
+  <text x="258" y="172" font-family="'Segoe UI',Arial,sans-serif" font-weight="800" font-size="72" fill="#ffffff" letter-spacing="-2">Reply</text>
+  <text x="522" y="172" font-family="'Segoe UI',Arial,sans-serif" font-weight="800" font-size="72" fill="#00B4D8" letter-spacing="-2">Jet</text>
+  <text x="260" y="210" font-family="'Segoe UI',Arial,sans-serif" font-weight="400" font-size="18" fill="#6b7280" letter-spacing="3">AI-POWERED CUSTOMER REPLY ENGINE</text>
+  <rect x="800" y="100" width="160" height="32" rx="16" fill="#00B4D8" opacity="0.15"/>
+  <text x="880" y="121" font-family="'Segoe UI',Arial,sans-serif" font-size="13" fill="#00B4D8" text-anchor="middle" font-weight="600">😤 Angry Mode</text>
+  <rect x="800" y="144" width="160" height="32" rx="16" fill="#00B4D8" opacity="0.10"/>
+  <text x="880" y="165" font-family="'Segoe UI',Arial,sans-serif" font-size="13" fill="#00B4D8" text-anchor="middle" font-weight="600">💰 Sales Mode</text>
+  <rect x="800" y="188" width="160" height="32" rx="16" fill="#00B4D8" opacity="0.08"/>
+  <text x="880" y="209" font-family="'Segoe UI',Arial,sans-serif" font-size="13" fill="#00B4D8" text-anchor="middle" font-weight="600">💬 Normal Mode</text>
+  <rect x="980" y="100" width="180" height="32" rx="16" fill="#ffffff" opacity="0.05"/>
+  <text x="1070" y="121" font-family="'Segoe UI',Arial,sans-serif" font-size="13" fill="#9ca3af" text-anchor="middle" font-weight="600">🇪🇬 Egyptian Arabic</text>
+  <rect x="980" y="144" width="180" height="32" rx="16" fill="#ffffff" opacity="0.05"/>
+  <text x="1070" y="165" font-family="'Segoe UI',Arial,sans-serif" font-size="13" fill="#9ca3af" text-anchor="middle" font-weight="600">⚡ Groq — Ultra Fast</text>
+  <rect x="980" y="188" width="180" height="32" rx="16" fill="#ffffff" opacity="0.05"/>
+  <text x="1070" y="209" font-family="'Segoe UI',Arial,sans-serif" font-size="13" fill="#9ca3af" text-anchor="middle" font-weight="600">🚀 Next.js + Vercel</text>
+  <rect x="0" y="317" width="1280" height="3" fill="#00B4D8" opacity="0.4"/>
+</svg>
