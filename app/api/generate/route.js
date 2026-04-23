@@ -42,12 +42,9 @@ function detectUserIntent(message = "") {
   const isAngry = angrySignals.some((s) => text.includes(s));
   const isSales = salesSignals.some((s) => text.includes(s));
 
-  let intent = "normal";
-
-  if (isAngry) intent = "angry";
-  else if (isSales) intent = "sales";
-
-  return intent;
+  if (isAngry) return "angry";
+  if (isSales) return "sales";
+  return "normal";
 }
 
 function buildSystemPrompt(tone, language, intent) {
@@ -55,9 +52,9 @@ function buildSystemPrompt(tone, language, intent) {
 
   const languageInstruction = isArabic
     ? [
-        "Write in natural Egyptian Arabic (عامية مصرية).",
-        "Keep it human, simple, and natural.",
-        "Avoid formal Arabic and translations.",
+        "Write ONLY in natural Egyptian Arabic (عامية مصرية).",
+        "Sound like a real human, not AI.",
+        "Avoid formal Arabic completely.",
       ].join(" ")
     : "Write in natural conversational English.";
 
@@ -65,36 +62,44 @@ function buildSystemPrompt(tone, language, intent) {
     intent === "angry"
       ? [
           "Customer is angry.",
-          "Start with empathy like: حقك علينا or معلش حصل مشكلة.",
-          "Calm them down, take responsibility, fix the issue.",
-          "Ask for details to solve quickly.",
-          "Never sound robotic or defensive.",
+          "You MUST start with: حقك علينا or معلش حصل مشكلة.",
+          "You MUST apologize clearly.",
+          "You MUST take responsibility.",
+          "You MUST offer immediate fix.",
+          "You MUST ask for order details.",
         ].join(" ")
       : intent === "sales"
       ? [
-          "Customer has buying intent.",
-          "Be persuasive but natural.",
-          "Highlight value clearly.",
-          "Answer price or availability directly.",
-          "End with one clear CTA.",
+          "Customer wants to buy.",
+          "You MUST answer the question FIRST (price or availability).",
+          "Then highlight value.",
+          "Then include ONE clear CTA.",
         ].join(" ")
-      : "Customer is normal. Respond clearly and helpfully.";
+      : [
+          "Customer is normal.",
+          "Answer directly.",
+          "Keep it short.",
+        ].join(" ");
 
   const toneInstruction =
     tone === "sales" || intent === "sales"
       ? "Use persuasive tone."
       : tone === "friendly"
-      ? "Use friendly human tone."
-      : "Use professional calm tone.";
+      ? "Use friendly tone."
+      : "Use professional tone.";
 
   return [
     "You are a smart customer support and sales agent.",
     languageInstruction,
     intentInstruction,
     toneInstruction,
-    "Reply naturally like a real human.",
-    "Keep it short and useful.",
-    "Return only the reply.",
+    "Reply like a human.",
+    "Keep it concise.",
+    "Return ONLY the reply.",
+    "STRICT RULES:",
+    "- Do NOT use formal Arabic",
+    "- Do NOT ignore the question",
+    "- Do NOT invent fake details",
   ].join(" ");
 }
 
@@ -128,8 +133,8 @@ export async function POST(request) {
       },
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
-        temperature: 0.5,
-        max_tokens: 200,
+        temperature: 0.4,
+        max_tokens: 180,
         messages: [
           {
             role: "system",
