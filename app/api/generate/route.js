@@ -13,9 +13,20 @@ function detectUserIntent(message = "") {
     "تأخير",
     "سيء",
     "زفت",
+    "مش راضي",
+    "زعلان",
+    "متضايق",
+    "غاضب",
+    "احتيال",
+    "نصب",
+    "استرجاع",
+    "إلغاء",
     "angry",
     "bad",
     "complaint",
+    "refund",
+    "cancel",
+    "scam",
   ];
 
   const salesSignals = [
@@ -28,15 +39,12 @@ function detectUserIntent(message = "") {
     "available",
   ];
 
-  const isAngry = angrySignals.some((signal) => text.includes(signal));
-  const isSales = salesSignals.some((signal) => text.includes(signal));
+  const isAngry = angrySignals.some((s) => text.includes(s));
+  const isSales = salesSignals.some((s) => text.includes(s));
 
-  let intent = "normal";
-
-  if (isAngry) intent = "angry";
-  else if (isSales) intent = "sales";
-
-  return intent;
+  if (isAngry) return "angry";
+  if (isSales) return "sales";
+  return "normal";
 }
 
 function buildSystemPrompt(tone, language, intent) {
@@ -44,12 +52,11 @@ function buildSystemPrompt(tone, language, intent) {
 
   const languageInstruction = isArabic
     ? [
-        "Write in natural Egyptian Arabic (عامية مصرية) by default.",
-        "Keep the wording human, warm, and realistic like a real support agent.",
-        "Avoid robotic phrasing, stiff MSA, and literal translations.",
-        "Use simple words customers actually use in chat.",
+        "Write ONLY in natural Egyptian Arabic (عامية مصرية).",
+        "Sound like a real human, not AI.",
+        "Avoid formal Arabic completely.",
       ].join(" ")
-    : "Write in natural, clear English with human wording.";
+    : "Write in natural conversational English.";
 
   const intentInstruction =
     intent === "angry"
@@ -60,7 +67,6 @@ function buildSystemPrompt(tone, language, intent) {
           "You MUST take responsibility.",
           "You MUST offer immediate fix.",
           "You MUST ask for order details.",
-          "Use ONLY natural Egyptian Arabic.",
         ].join(" ")
       : intent === "sales"
       ? [
@@ -68,36 +74,32 @@ function buildSystemPrompt(tone, language, intent) {
           "You MUST answer the question FIRST (price or availability).",
           "Then highlight value.",
           "Then include ONE clear CTA.",
-          "Use natural Egyptian Arabic only.",
         ].join(" ")
       : [
           "Customer is normal.",
-          "Answer directly and clearly.",
-          "Do NOT add fake details.",
+          "Answer directly.",
+          "Keep it short.",
         ].join(" ");
 
   const toneInstruction =
     tone === "sales" || intent === "sales"
-      ? "Use persuasive but respectful sales language and include one clear call to action."
+      ? "Use persuasive tone."
       : tone === "friendly"
-      ? "Use a friendly, conversational, human tone."
-      : "Use a professional, concise support tone.";
+      ? "Use friendly tone."
+      : "Use professional tone.";
 
   return [
-    "You are an expert customer support agent for a modern business.",
-    `Tone: ${tone}.`,
+    "You are a smart customer support and sales agent.",
     languageInstruction,
     intentInstruction,
     toneInstruction,
-    "Write one customer-facing reply only.",
-    "The response must be concise, natural, solution-oriented, and non-robotic.",
-    "Acknowledge the issue, provide a practical next step, and keep trust high.",
-    "Return only the final reply text.",
+    "Reply like a human.",
+    "Keep it concise.",
+    "Return ONLY the reply.",
     "STRICT RULES:",
     "- Do NOT use formal Arabic",
-    "- Do NOT translate literally",
-    "- Do NOT ignore the customer question",
-    "- Do NOT invent fake information",
+    "- Do NOT ignore the question",
+    "- Do NOT invent fake details",
   ].join(" ");
 }
 
@@ -110,15 +112,15 @@ export async function POST(request) {
     }
 
     if (!TONES.includes(tone)) {
-      return NextResponse.json({ error: "Invalid tone value." }, { status: 400 });
+      return NextResponse.json({ error: "Invalid tone." }, { status: 400 });
     }
 
     if (!LANGUAGES.includes(language)) {
-      return NextResponse.json({ error: "Invalid language value." }, { status: 400 });
+      return NextResponse.json({ error: "Invalid language." }, { status: 400 });
     }
 
     if (!process.env.GROQ_API_KEY) {
-      return NextResponse.json({ error: "Server is missing GROQ_API_KEY." }, { status: 500 });
+      return NextResponse.json({ error: "Missing API key." }, { status: 500 });
     }
 
     const intent = detectUserIntent(message);
@@ -131,8 +133,8 @@ export async function POST(request) {
       },
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
-        temperature: 0.5,
-        max_tokens: 200,
+        temperature: 0.4,
+        max_tokens: 180,
         messages: [
           {
             role: "system",
