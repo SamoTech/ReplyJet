@@ -32,10 +32,11 @@ export default function HomePage() {
     if (!message.trim()) { setError("Please enter a customer message."); return; }
     setLoading(true);
     try {
+      const { maxTokens } = loadPrefs();
       const res  = await fetch("/api/generate", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ message, tone, language }),
+        body:    JSON.stringify({ message, tone, language, maxTokens }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Failed to generate reply."); return; }

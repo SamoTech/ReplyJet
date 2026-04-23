@@ -46,8 +46,9 @@ function buildSystemPrompt(tone, language, intent) {
       ].join(" ");
 
   // ── Intent rule ───────────────────────────────────────────────────────────
-  const intentInstruction =
-    intent === "angry"
+  let intentInstruction;
+  if (intent === "angry") {
+    intentInstruction = isArabic
       ? [
           "Customer is angry.",
           "You MUST follow this EXACT structure:",
@@ -57,17 +58,26 @@ function buildSystemPrompt(tone, language, intent) {
           "4. Then ask: 'ممكن تبعتلنا رقم الطلب؟'.",
           "RULES: Use ONLY simple Egyptian Arabic. SHORT sentences. Do NOT change structure.",
         ].join(" ")
-      : intent === "sales"
-      ? [
-          "Customer wants to buy.",
-          "Answer the question FIRST (price or availability).",
-          "Then highlight value.",
-          "Then include ONE clear CTA.",
-        ].join(" ")
       : [
-          "Customer is asking a normal question.",
-          "Answer directly and keep it short.",
+          "Customer is angry.",
+          "Apologize sincerely and take responsibility.",
+          "Offer to resolve the issue immediately.",
+          "Ask for their order number to look into it.",
+          "Keep it short, warm, and professional.",
         ].join(" ");
+  } else if (intent === "sales") {
+    intentInstruction = [
+      "Customer wants to buy.",
+      "Answer the question FIRST (price or availability).",
+      "Then highlight value.",
+      "Then include ONE clear CTA.",
+    ].join(" ");
+  } else {
+    intentInstruction = [
+      "Customer is asking a normal question.",
+      "Answer directly and keep it short.",
+    ].join(" ");
+  }
 
   // ── Tone rule ─────────────────────────────────────────────────────────────
   const toneInstruction =
@@ -95,7 +105,7 @@ function buildSystemPrompt(tone, language, intent) {
 
 export async function POST(request) {
   try {
-    const { message, tone, language } = await request.json();
+    const { message, tone, language, maxTokens } = await request.json();
 
     if (!message || typeof message !== "string") {
       return NextResponse.json({ error: "Message is required." }, { status: 400 });
@@ -110,6 +120,7 @@ export async function POST(request) {
       return NextResponse.json({ error: "Missing API key." }, { status: 500 });
     }
 
+    const safeTokens = Math.min(Math.max(Number(maxTokens) || 180, 60), 400);
     const intent = detectUserIntent(message);
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -121,7 +132,7 @@ export async function POST(request) {
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
         temperature: 0.3,
-        max_tokens: 180,
+        max_tokens: safeTokens,
         messages: [
           {
             role: "system",
@@ -151,7 +162,8 @@ export async function POST(request) {
       success: true,
       data: { reply, tone, language, intent },
     });
-  } catch {
+  } catch (err) {
+    console.error("[generate] error:", err);
     return NextResponse.json({ error: "Bad request." }, { status: 400 });
   }
 }
