@@ -77,7 +77,7 @@ export default function HomePage() {
   const isBusy     = loading || regen;
 
   const charColor =
-    charCount === 0     ? "transparent"
+    charCount === 0     ? t.faint
     : charCount >= 1000 ? t.error
     : charCount >= 800  ? t.warning
     : t.faint;
@@ -132,12 +132,14 @@ export default function HomePage() {
               onFocus={(e) => (e.target.style.borderColor = t.accent)}
               onBlur={(e)  => (e.target.style.borderColor = t.border)}
             />
-            <span style={{
-              position: "absolute", bottom: 10, right: 12, fontSize: "11px",
-              color: charColor, pointerEvents: "none", transition: "color 0.2s",
-            }}>
-              {charCount} chars
-            </span>
+            {charCount > 0 && (
+              <span style={{
+                position: "absolute", bottom: 10, right: 12, fontSize: "11px",
+                color: charColor, pointerEvents: "none", transition: "color 0.2s",
+              }}>
+                {charCount} chars
+              </span>
+            )}
           </div>
           <p style={{ margin: "6px 0 0", fontSize: "11px", color: t.faint }}>
             Tip: Press{" "}
