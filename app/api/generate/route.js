@@ -62,11 +62,12 @@ function buildSystemPrompt(tone, language, intent) {
     intent === "angry"
       ? [
           "Customer is angry.",
-          "You MUST start with: حقك علينا or معلش حصل مشكلة.",
-          "You MUST apologize clearly.",
-          "You MUST take responsibility.",
-          "You MUST offer immediate fix.",
-          "You MUST ask for order details.",
+          "You MUST follow this EXACT structure:",
+          "1. Start with: 'حقك علينا على اللي حصل' OR 'معلش حصل مشكلة'.",
+          "2. Then apology: 'وآسفين جدًا على الإزعاج'.",
+          "3. Then action: 'خلينا نحل الموضوع فورًا'.",
+          "4. Then ask: 'ممكن تبعتلنا رقم الطلب؟'.",
+          "RULES: Use ONLY simple Egyptian Arabic. Use SHORT sentences. Do NOT generate new sentence styles. Do NOT translate. Do NOT change structure.",
         ].join(" ")
       : intent === "sales"
       ? [
@@ -100,6 +101,11 @@ function buildSystemPrompt(tone, language, intent) {
     "- Do NOT use formal Arabic",
     "- Do NOT ignore the question",
     "- Do NOT invent fake details",
+    "RESPONSE STYLE RULE:",
+    "- Use short Egyptian phrases",
+    "- No complex sentences",
+    "- No formal Arabic",
+    "- No creative wording",
   ].join(" ");
 }
 
