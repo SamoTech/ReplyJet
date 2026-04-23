@@ -3,25 +3,87 @@ import { NextResponse } from "next/server";
 const TONES = ["professional", "friendly", "sales"];
 const LANGUAGES = ["English", "Arabic"];
 
-function buildSystemPrompt(tone, language) {
-  const languageInstruction =
-    language === "Arabic"
+function detectUserIntent(message = "") {
+  const text = message.toLowerCase();
+
+  const angrySignals = [
+    "اكسر",
+    "هشتكي",
+    "غلط",
+    "تأخير",
+    "سيء",
+    "زفت",
+    "angry",
+    "bad",
+    "complaint",
+  ];
+
+  const salesSignals = [
+    "سعر",
+    "بكام",
+    "متاح",
+    "تفاصيل",
+    "price",
+    "how much",
+    "available",
+  ];
+
+  const isAngry = angrySignals.some((signal) => text.includes(signal));
+  const isSales = salesSignals.some((signal) => text.includes(signal));
+
+  let intent = "normal";
+
+  if (isAngry) intent = "angry";
+  else if (isSales) intent = "sales";
+
+  return intent;
+}
+
+function buildSystemPrompt(tone, language, intent) {
+  const isArabic = language === "Arabic";
+
+  const languageInstruction = isArabic
+    ? [
+        "Write in natural Egyptian Arabic (عامية مصرية) by default.",
+        "Keep the wording human, warm, and realistic like a real support agent.",
+        "Avoid robotic phrasing, stiff MSA, and literal translations.",
+        "Use simple words customers actually use in chat.",
+      ].join(" ")
+    : "Write in natural, clear English with human wording.";
+
+  const intentInstruction =
+    intent === "angry"
       ? [
-          "Write in Arabic.",
-          "Use clear, customer-friendly wording.",
-          "Choose Egyptian Arabic for casual/customer-chat style and Modern Standard Arabic for formal/business style.",
+          "The customer is angry or frustrated.",
+          "Start with empathy in Egyptian Arabic like: حقك علينا or معلش حصل مشكلة.",
+          "De-escalate calmly, take responsibility, offer an immediate fix, and ask for missing details.",
+          "Do not sound defensive or blame the customer.",
         ].join(" ")
-      : "Write in natural, clear English.";
+      : intent === "sales"
+      ? [
+          "The customer has sales intent and is evaluating buying.",
+          "Be persuasive but natural, highlight value clearly, reduce hesitation, and include one clear CTA.",
+          "If the customer asked about price or availability, answer directly before the CTA.",
+        ].join(" ")
+      : "The customer is normal. Respond clearly, directly, and helpfully.";
+
+  const toneInstruction =
+    tone === "sales" || intent === "sales"
+      ? "Use persuasive but respectful sales language and include one clear call to action."
+      : tone === "friendly"
+      ? "Use a friendly, conversational, human tone."
+      : "Use a professional, concise support tone.";
 
   return [
     "You are an expert customer support agent for a modern business.",
-    "Write one response to the customer message.",
     `Tone: ${tone}.`,
     languageInstruction,
-    "The response must be concise, natural, persuasive, and solution-oriented.",
-    "Acknowledge the customer concern, provide a helpful next step, and keep it human.",
-    "Avoid fluff, repetitive phrases, and generic AI wording.",
-    "Return only the final customer-facing message text.",
+    intentInstruction,
+    toneInstruction,
+    "Write one customer-facing reply only.",
+    "The response must be concise, natural, solution-oriented, and non-robotic.",
+    "Acknowledge the issue, provide a practical next step, and keep trust high.",
+    "Return only the final reply text.",
   ].join(" ");
 }
 
@@ -45,6 +107,8 @@ export async function POST(request) {
       return NextResponse.json({ error: "Server is missing GROQ_API_KEY." }, { status: 500 });
     }
 
+    const intent = detectUserIntent(message);
+
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -58,7 +122,7 @@ export async function POST(request) {
         messages: [
           {
             role: "system",
-            content: buildSystemPrompt(tone, language),
+            content: buildSystemPrompt(tone, language, intent),
           },
           {
             role: "user",
@@ -89,6 +153,7 @@ export async function POST(request) {
         reply,
         tone,
         language,
+        intent,
       },
     });
   } catch {
