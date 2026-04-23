@@ -9,7 +9,7 @@
 [![Groq](https://img.shields.io/badge/Groq-llama--3.1--8b-orange)](https://groq.com)
 [![Vercel](https://img.shields.io/badge/Deploy-Vercel-black?logo=vercel)](https://vercel.com)
 [![License](https://img.shields.io/badge/License-Commercial-red)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-1.0.0-00B4D8)](https://github.com/SamoTech/ReplyJet/releases)
+[![Version](https://img.shields.io/badge/Version-1.2.0-00B4D8)](https://github.com/SamoTech/ReplyJet/releases)
 [![PRs Welcome](https://img.shields.io/badge/PRs-Welcome-brightgreen?logo=github)](CONTRIBUTING.md)
 [![JavaScript](https://img.shields.io/badge/JavaScript-ES2024-F7DF1E?logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 
@@ -29,8 +29,9 @@ ReplyJet detects the intent behind every customer message and generates a short,
 
 | Intent | Trigger signals | What happens |
 |--------|----------------|-------------- |
-| 😤 Angry | زعلان، غلط، هشتكي، angry, complaint, refund | Structured apology → action → order request |
-| 💰 Sales | بكام، سعر، متاح، price, how much, available | Price/availability first → value → CTA |
+| 😤 Angry / Complaint | زعلان، غلط، هشتكي، angry, complaint, refund | Structured apology → action → order request |
+| 💰 Sales / Close Sale | بكام، سعر، متاح، price, how much, available | Price/availability first → value → CTA |
+| 📩 Follow Up | manual mode | Warm re-engagement → soft CTA |
 | 💬 Normal | anything else | Direct, short answer |
 
 ---
@@ -38,12 +39,17 @@ ReplyJet detects the intent behind every customer message and generates a short,
 ## Features
 
 - **Intent detection** — auto-detects angry / sales / normal from message content
+- **Mode selector** — override intent manually: `Auto / Complaint / Close Sale / Follow Up`
 - **Structured Egyptian Arabic** — sounds like a real human, not a chatbot
 - **Multiple tones** — professional, friendly, sales
 - **Bilingual** — Arabic (Egyptian dialect) + English
 - **Copy button** — one-click reply copy with 2s confirmation
-- **Intent badge** — shows detected intent on every reply (🔴 / 🟢 / 🔵)
+- **Regenerate button** — get a new reply without clearing the current one
+- **Intent badge** — shows detected intent on every reply
 - **RTL layout** — Arabic replies render right-to-left automatically
+- **History** — last 50 replies saved locally with intent + mode
+- **Settings** — default tone, language, and max tokens
+- **Keyboard shortcut** — `Ctrl+Enter` to generate
 
 ---
 
@@ -88,16 +94,23 @@ npm run dev
 ```
 ReplyJet/
 ├── app/
-│   ├── page.js               # UI — textarea, selectors, copy button, intent badge
+│   ├── page.js               # Main UI — textarea, mode, tone, language, reply card
 │   ├── layout.js             # Root layout
+│   ├── history/page.js       # Reply history (last 50)
+│   ├── settings/page.js      # User preferences
+│   ├── about/page.js         # About page
 │   └── api/
 │       └── generate/
-│           └── route.js      # Intent engine + prompt builder + Groq API call
+│           └── route.js      # Intent engine + mode override + prompt builder + Groq API
+├── components/
+│   └── NavBar.js             # Top navigation bar
+├── lib/
+│   └── tokens.js             # Design tokens, constants (TONES, LANGUAGES, MODES, INTENTS)
 ├── public/
-│   ├── banner.svg            # GitHub README banner
-│   ├── logo.svg              # Product logo
-│   └── favicon.svg           # Browser favicon
-├── .env.example              # Environment variable template
+│   ├── banner.svg
+│   ├── logo.svg
+│   └── favicon.svg
+├── .env.example
 ├── CONTRIBUTING.md
 ├── CHANGELOG.md
 ├── SECURITY.md
@@ -109,15 +122,17 @@ ReplyJet/
 ## How It Works
 
 ```
-User input
+User input + Mode selection
    ↓
-detectUserIntent()     — keyword scan → angry | sales | normal
+Mode === "auto"?
+   ├── YES → detectUserIntent()   — keyword scan → angry | sales | normal
+   └── NO  → use mode directly    — complaint | close_sale | follow_up
    ↓
-buildSystemPrompt()    — structured prompt per intent + language
+buildSystemPrompt()    — structured prompt per intent + language + tone
    ↓
-Groq API  (llama-3.1-8b-instant, temp=0.4, max_tokens=180)
+Groq API  (llama-3.1-8b-instant, temp=0.3, max_tokens=60–400)
    ↓
-{ reply, tone, language, intent } → UI
+{ reply, tone, language, intent, mode } → UI → History
 ```
 
 ---
@@ -132,15 +147,18 @@ Groq API  (llama-3.1-8b-instant, temp=0.4, max_tokens=180)
 {
   "message": "انا هاجي اكسر المطعم",
   "tone": "professional",
-  "language": "Arabic"
+  "language": "Arabic",
+  "mode": "auto"
 }
 ```
 
 | Field | Type | Values |
 |-------|------|--------|
-| `message` | string | Any customer message |
+| `message` | string | Any customer message (max 1000 chars) |
 | `tone` | string | `professional` \| `friendly` \| `sales` |
 | `language` | string | `Arabic` \| `English` |
+| `mode` | string | `auto` \| `complaint` \| `close_sale` \| `follow_up` |
+| `maxTokens` | number | `60–400` (optional, default 180) |
 
 **Response:**
 
@@ -151,7 +169,8 @@ Groq API  (llama-3.1-8b-instant, temp=0.4, max_tokens=180)
     "reply": "حقك علينا على اللي حصل، وآسفين جدًا على الإزعاج. خلينا نحل الموضوع فورًا — ممكن تبعتلنا رقم الطلب؟",
     "tone": "professional",
     "language": "Arabic",
-    "intent": "angry"
+    "intent": "angry",
+    "mode": "auto"
   }
 }
 ```
@@ -168,20 +187,23 @@ Groq API  (llama-3.1-8b-instant, temp=0.4, max_tokens=180)
 
 ## Test Cases
 
-| # | Input | Expected Intent | Expected structure |
-|---|-------|----------------|-------------------|
-| 1 | `انا هاجي اكسر المطعم` | angry | Starts with حقك علينا / معلش |
-| 2 | `بكام المنتج؟` | sales | Price first → value → CTA |
-| 3 | `في توصيل؟` | normal | Direct short answer |
+| # | Input | Mode | Expected Intent | Expected structure |
+|---|-------|------|----------------|-------------------|
+| 1 | `انا هاجي اكسر المطعم` | auto | angry | Starts with حقك علينا / معلش |
+| 2 | `بكام المنتج؟` | auto | sales | Price first → value → CTA |
+| 3 | `في توصيل؟` | auto | normal | Direct short answer |
+| 4 | `عايز اعرف اكتر` | close_sale | close_sale | Value highlight → CTA |
+| 5 | `تمام شكرا` | follow_up | follow_up | Warm re-engagement → soft CTA |
 
 ---
 
 ## Roadmap
 
-- [x] Smart reply generator — Phase 1
-- [ ] Mode buttons: close_sale / complaint / follow_up — Phase 2
-- [ ] Templates library + saved replies — Phase 3
-- [ ] Chrome extension + WhatsApp / Facebook integration — Phase 4
+- [x] Smart reply generator — Phase 1 (v1.0.0)
+- [x] Regenerate button, History, Settings, Keyboard shortcut — Phase 1.1 (v1.1.0)
+- [x] Mode selector: complaint / close_sale / follow_up — Phase 2 (v1.2.0)
+- [ ] Templates library + saved replies — Phase 3 (v1.3.0)
+- [ ] Chrome extension + WhatsApp / Facebook integration — Phase 4 (v2.0.0)
 
 ---
 
