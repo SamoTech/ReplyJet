@@ -7,36 +7,15 @@ function detectUserIntent(message = "") {
   const text = message.toLowerCase();
 
   const angrySignals = [
-    "اكسر",
-    "هشتكي",
-    "غلط",
-    "تأخير",
-    "سيء",
-    "زفت",
-    "مش راضي",
-    "زعلان",
-    "متضايق",
-    "غاضب",
-    "احتيال",
-    "نصب",
-    "استرجاع",
-    "إلغاء",
-    "angry",
-    "bad",
-    "complaint",
-    "refund",
-    "cancel",
-    "scam",
+    "اكسر", "هشتكي", "غلط", "تأخير", "سيء", "زفت",
+    "مش راضي", "زعلان", "متضايق", "غاضب", "احتيال",
+    "نصب", "استرجاع", "إلغاء",
+    "angry", "bad", "complaint", "refund", "cancel", "scam",
   ];
 
   const salesSignals = [
-    "سعر",
-    "بكام",
-    "متاح",
-    "تفاصيل",
-    "price",
-    "how much",
-    "available",
+    "سعر", "بكام", "متاح", "تفاصيل",
+    "price", "how much", "available",
   ];
 
   const isAngry = angrySignals.some((s) => text.includes(s));
@@ -50,14 +29,23 @@ function detectUserIntent(message = "") {
 function buildSystemPrompt(tone, language, intent) {
   const isArabic = language === "Arabic";
 
+  // ── Language rule ─────────────────────────────────────────────────────────
   const languageInstruction = isArabic
     ? [
-        "Write ONLY in natural Egyptian Arabic (عامية مصرية).",
-        "Sound like a real human, not AI.",
-        "Avoid formal Arabic completely.",
+        "You MUST reply ONLY in Egyptian Arabic (عامية مصرية).",
+        "You MUST write every word using Arabic letters (أ ب ت ث …).",
+        "NEVER use Latin letters, Franco-Arabic, or Arabizi.",
+        "NEVER mix languages.",
+        "Sound like a real human Egyptian support agent.",
+        "Avoid formal Arabic (فصحى) completely.",
       ].join(" ")
-    : "Write in natural conversational English.";
+    : [
+        "You MUST reply ONLY in English.",
+        "NEVER use Arabic letters or any other language.",
+        "Sound like a real human support agent.",
+      ].join(" ");
 
+  // ── Intent rule ───────────────────────────────────────────────────────────
   const intentInstruction =
     intent === "angry"
       ? [
@@ -67,45 +55,41 @@ function buildSystemPrompt(tone, language, intent) {
           "2. Then apology: 'وآسفين جدًا على الإزعاج'.",
           "3. Then action: 'خلينا نحل الموضوع فورًا'.",
           "4. Then ask: 'ممكن تبعتلنا رقم الطلب؟'.",
-          "RULES: Use ONLY simple Egyptian Arabic. Use SHORT sentences. Do NOT generate new sentence styles. Do NOT translate. Do NOT change structure.",
+          "RULES: Use ONLY simple Egyptian Arabic. SHORT sentences. Do NOT change structure.",
         ].join(" ")
       : intent === "sales"
       ? [
           "Customer wants to buy.",
-          "You MUST answer the question FIRST (price or availability).",
+          "Answer the question FIRST (price or availability).",
           "Then highlight value.",
           "Then include ONE clear CTA.",
         ].join(" ")
       : [
-          "Customer is normal.",
-          "Answer directly.",
-          "Keep it short.",
+          "Customer is asking a normal question.",
+          "Answer directly and keep it short.",
         ].join(" ");
 
+  // ── Tone rule ─────────────────────────────────────────────────────────────
   const toneInstruction =
     tone === "sales" || intent === "sales"
-      ? "Use persuasive tone."
+      ? "Use a persuasive tone."
       : tone === "friendly"
-      ? "Use friendly tone."
-      : "Use professional tone.";
+      ? "Use a friendly tone."
+      : "Use a professional tone.";
 
   return [
-    "You are a smart customer support and sales agent.",
+    "You are a smart customer support agent.",
     languageInstruction,
     intentInstruction,
     toneInstruction,
-    "Reply like a human.",
-    "Keep it concise.",
-    "Return ONLY the reply.",
+    "Return ONLY the reply text. No labels. No explanations.",
     "STRICT RULES:",
-    "- Do NOT use formal Arabic",
-    "- Do NOT ignore the question",
-    "- Do NOT invent fake details",
-    "RESPONSE STYLE RULE:",
-    "- Use short Egyptian phrases",
-    "- No complex sentences",
-    "- No formal Arabic",
-    "- No creative wording",
+    isArabic
+      ? "- Arabic script only. Zero Latin letters. Zero Franco-Arabic."
+      : "- English only. Zero Arabic letters.",
+    "- Do NOT ignore the customer's question.",
+    "- Do NOT invent fake details.",
+    "- Keep it concise.",
   ].join(" ");
 }
 
@@ -116,15 +100,12 @@ export async function POST(request) {
     if (!message || typeof message !== "string") {
       return NextResponse.json({ error: "Message is required." }, { status: 400 });
     }
-
     if (!TONES.includes(tone)) {
       return NextResponse.json({ error: "Invalid tone." }, { status: 400 });
     }
-
     if (!LANGUAGES.includes(language)) {
       return NextResponse.json({ error: "Invalid language." }, { status: 400 });
     }
-
     if (!process.env.GROQ_API_KEY) {
       return NextResponse.json({ error: "Missing API key." }, { status: 500 });
     }
@@ -139,7 +120,7 @@ export async function POST(request) {
       },
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
-        temperature: 0.4,
+        temperature: 0.3,
         max_tokens: 180,
         messages: [
           {
@@ -156,10 +137,7 @@ export async function POST(request) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      return NextResponse.json(
-        { error: "AI failed", details: errorText },
-        { status: 502 }
-      );
+      return NextResponse.json({ error: "AI failed", details: errorText }, { status: 502 });
     }
 
     const data = await response.json();
@@ -171,12 +149,7 @@ export async function POST(request) {
 
     return NextResponse.json({
       success: true,
-      data: {
-        reply,
-        tone,
-        language,
-        intent,
-      },
+      data: { reply, tone, language, intent },
     });
   } catch {
     return NextResponse.json({ error: "Bad request." }, { status: 400 });
