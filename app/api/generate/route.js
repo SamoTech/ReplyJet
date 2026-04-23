@@ -132,7 +132,7 @@ export async function POST(request) {
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
         temperature: 0.5,
-        max_tokens: 220,
+        max_tokens: 200,
         messages: [
           {
             role: "system",
@@ -149,7 +149,7 @@ export async function POST(request) {
     if (!response.ok) {
       const errorText = await response.text();
       return NextResponse.json(
-        { error: "Failed to generate reply.", details: errorText },
+        { error: "AI failed", details: errorText },
         { status: 502 }
       );
     }
@@ -171,6 +171,6 @@ export async function POST(request) {
       },
     });
   } catch {
-    return NextResponse.json({ error: "Invalid request payload." }, { status: 400 });
+    return NextResponse.json({ error: "Bad request." }, { status: 400 });
   }
 }
