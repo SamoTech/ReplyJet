@@ -7,33 +7,47 @@ function detectUserIntent(message = "") {
   const text = message.toLowerCase();
 
   const angrySignals = [
-    "angry",
-    "upset",
-    "frustrated",
-    "terrible",
-    "worst",
-    "refund",
-    "cancel",
-    "complaint",
-    "scam",
-    "fraud",
+    "اكسر",
+    "هشتكي",
+    "غلط",
+    "تأخير",
+    "سيء",
+    "زفت",
     "مش راضي",
     "زعلان",
     "متضايق",
     "غاضب",
-    "سيء",
-    "وحش",
     "احتيال",
     "نصب",
     "استرجاع",
     "إلغاء",
+    "angry",
+    "bad",
+    "complaint",
+    "refund",
+    "cancel",
+    "scam",
   ];
 
-  if (angrySignals.some((signal) => text.includes(signal))) {
-    return "angry";
-  }
+  const salesSignals = [
+    "سعر",
+    "بكام",
+    "متاح",
+    "تفاصيل",
+    "price",
+    "how much",
+    "available",
+  ];
 
-  return "normal";
+  const isAngry = angrySignals.some((s) => text.includes(s));
+  const isSales = salesSignals.some((s) => text.includes(s));
+
+  let intent = "normal";
+
+  if (isAngry) intent = "angry";
+  else if (isSales) intent = "sales";
+
+  return intent;
 }
 
 function buildSystemPrompt(tone, language, intent) {
@@ -41,40 +55,46 @@ function buildSystemPrompt(tone, language, intent) {
 
   const languageInstruction = isArabic
     ? [
-        "Write in natural Egyptian Arabic (عامية مصرية) by default.",
-        "Keep the wording human, warm, and realistic like a real support agent.",
-        "Avoid robotic phrasing, stiff MSA, and literal translations.",
-        "Use simple words customers actually use in chat.",
+        "Write in natural Egyptian Arabic (عامية مصرية).",
+        "Keep it human, simple, and natural.",
+        "Avoid formal Arabic and translations.",
       ].join(" ")
-    : "Write in natural, clear English with human wording.";
+    : "Write in natural conversational English.";
 
   const intentInstruction =
     intent === "angry"
       ? [
-          "The customer is angry or frustrated.",
-          "Start with a short, genuine apology and acknowledgment.",
-          "De-escalate calmly, take ownership, and provide a concrete next step.",
-          "Do not sound defensive or blame the customer.",
+          "Customer is angry.",
+          "Start with empathy like: حقك علينا or معلش حصل مشكلة.",
+          "Calm them down, take responsibility, fix the issue.",
+          "Ask for details to solve quickly.",
+          "Never sound robotic or defensive.",
         ].join(" ")
-      : "The customer is normal. Respond clearly and helpfully.";
+      : intent === "sales"
+      ? [
+          "Customer has buying intent.",
+          "Be persuasive but natural.",
+          "Highlight value clearly.",
+          "Answer price or availability directly.",
+          "End with one clear CTA.",
+        ].join(" ")
+      : "Customer is normal. Respond clearly and helpfully.";
 
   const toneInstruction =
-    tone === "sales"
-      ? "Use persuasive but respectful sales language and include one clear call to action."
+    tone === "sales" || intent === "sales"
+      ? "Use persuasive tone."
       : tone === "friendly"
-      ? "Use a friendly, conversational, human tone."
-      : "Use a professional, concise support tone.";
+      ? "Use friendly human tone."
+      : "Use professional calm tone.";
 
   return [
-    "You are an expert customer support agent for a modern business.",
-    `Tone: ${tone}.`,
+    "You are a smart customer support and sales agent.",
     languageInstruction,
     intentInstruction,
     toneInstruction,
-    "Write one customer-facing reply only.",
-    "The response must be concise, natural, solution-oriented, and non-robotic.",
-    "Acknowledge the issue, provide a practical next step, and keep trust high.",
-    "Return only the final reply text.",
+    "Reply naturally like a real human.",
+    "Keep it short and useful.",
+    "Return only the reply.",
   ].join(" ");
 }
 
@@ -87,15 +107,15 @@ export async function POST(request) {
     }
 
     if (!TONES.includes(tone)) {
-      return NextResponse.json({ error: "Invalid tone value." }, { status: 400 });
+      return NextResponse.json({ error: "Invalid tone." }, { status: 400 });
     }
 
     if (!LANGUAGES.includes(language)) {
-      return NextResponse.json({ error: "Invalid language value." }, { status: 400 });
+      return NextResponse.json({ error: "Invalid language." }, { status: 400 });
     }
 
     if (!process.env.GROQ_API_KEY) {
-      return NextResponse.json({ error: "Server is missing GROQ_API_KEY." }, { status: 500 });
+      return NextResponse.json({ error: "Missing API key." }, { status: 500 });
     }
 
     const intent = detectUserIntent(message);
@@ -109,7 +129,7 @@ export async function POST(request) {
       body: JSON.stringify({
         model: "llama-3.1-8b-instant",
         temperature: 0.5,
-        max_tokens: 220,
+        max_tokens: 200,
         messages: [
           {
             role: "system",
@@ -126,7 +146,7 @@ export async function POST(request) {
     if (!response.ok) {
       const errorText = await response.text();
       return NextResponse.json(
-        { error: "Failed to generate reply.", details: errorText },
+        { error: "AI failed", details: errorText },
         { status: 502 }
       );
     }
@@ -148,6 +168,6 @@ export async function POST(request) {
       },
     });
   } catch {
-    return NextResponse.json({ error: "Invalid request payload." }, { status: 400 });
+    return NextResponse.json({ error: "Bad request." }, { status: 400 });
   }
 }
