@@ -5,7 +5,7 @@ import Link from "next/link";
 import NavBar from "@/components/NavBar";
 import {
   t, card, labelStyle, segmentBase,
-  TONES, LANGUAGES, INTENTS,
+  TONES, LANGUAGES, MODES, INTENTS,
   loadPrefs, saveToHistory,
 } from "@/lib/tokens";
 
@@ -13,6 +13,7 @@ export default function HomePage() {
   const [message,   setMessage]   = useState("");
   const [tone,      setTone]      = useState("professional");
   const [language,  setLanguage]  = useState("Arabic");
+  const [mode,      setMode]      = useState("auto");
   const [reply,     setReply]     = useState("");
   const [intent,    setIntent]    = useState("");
   const [loading,   setLoading]   = useState(false);
@@ -37,7 +38,7 @@ export default function HomePage() {
       const res  = await fetch("/api/generate", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ message, tone, language, maxTokens }),
+        body:    JSON.stringify({ message, tone, language, maxTokens, mode }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Failed to generate reply."); return; }
@@ -46,7 +47,7 @@ export default function HomePage() {
       setReply(generatedReply);
       setIntent(detectedIntent);
       if (generatedReply) {
-        saveToHistory({ message, tone, language, reply: generatedReply, intent: detectedIntent });
+        saveToHistory({ message, tone, language, reply: generatedReply, intent: detectedIntent, mode });
       }
     } catch {
       setError("Network error. Please try again.");
@@ -56,7 +57,7 @@ export default function HomePage() {
     }
   };
 
-  const handleGenerate  = () => generate({ isRegen: false });
+  const handleGenerate   = () => generate({ isRegen: false });
   const handleRegenerate = () => generate({ isRegen: true });
 
   const handleCopy = async () => {
@@ -145,6 +146,38 @@ export default function HomePage() {
           </p>
         </div>
 
+        {/* Mode Selector */}
+        <div style={card}>
+          <label style={labelStyle}>Mode</label>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", background: t.surface2, borderRadius: t.radiusSm, border: `1px solid ${t.border}`, padding: 3, gap: 2 }}>
+            {MODES.map((item) => {
+              const isActive = mode === item.value;
+              return (
+                <button
+                  key={item.value}
+                  onClick={() => setMode(item.value)}
+                  title={item.description}
+                  style={{
+                    ...segmentBase(isActive),
+                    flexDirection: "column",
+                    padding: "10px 4px",
+                    gap: 3,
+                    fontSize: "12px",
+                  }}
+                >
+                  <span style={{ fontSize: "16px", lineHeight: 1 }}>{item.icon}</span>
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+          {mode !== "auto" && (
+            <p style={{ margin: "8px 0 0", fontSize: "11px", color: t.accent }}>
+              ✦ {MODES.find((m) => m.value === mode)?.description}
+            </p>
+          )}
+        </div>
+
         {/* Controls Row */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <div style={card}>
@@ -220,15 +253,12 @@ export default function HomePage() {
               )}
             </div>
 
-            {/* Reply text — dims while regenerating */}
             <div style={{ background: t.surface2, border: `1px solid ${t.border}`, borderRadius: t.radiusSm, padding: "14px 16px", fontSize: "15px", lineHeight: 1.75, color: t.text, direction: isArabic ? "rtl" : "ltr", textAlign: isArabic ? "right" : "left", whiteSpace: "pre-wrap", wordBreak: "break-word", opacity: regen ? 0.4 : 1, transition: "opacity 0.2s" }}>
               {reply}
             </div>
 
             {/* Actions row */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, gap: 8 }}>
-
-              {/* Left: Copy + Regenerate */}
               <div style={{ display: "flex", gap: 8 }}>
                 <button
                   onClick={handleCopy}
@@ -242,7 +272,6 @@ export default function HomePage() {
                   )}
                 </button>
 
-                {/* Regenerate */}
                 <button
                   onClick={handleRegenerate}
                   disabled={isBusy}
@@ -257,7 +286,6 @@ export default function HomePage() {
                 </button>
               </div>
 
-              {/* Right: History link */}
               <Link
                 href="/history"
                 className="rj-link-muted"

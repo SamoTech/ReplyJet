@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 
-const TONES = ["professional", "friendly", "sales"];
+const TONES     = ["professional", "friendly", "sales"];
 const LANGUAGES = ["English", "Arabic"];
+const MODES     = ["auto", "complaint", "close_sale", "follow_up"];
 
 function detectUserIntent(message = "") {
   const text = message.toLowerCase();
@@ -19,18 +20,15 @@ function detectUserIntent(message = "") {
     "price", "how much", "available", "buy", "discount", "offer",
   ];
 
-  const isAngry = angrySignals.some((s) => text.includes(s));
-  const isSales = salesSignals.some((s) => text.includes(s));
-
-  if (isAngry) return "angry";
-  if (isSales) return "sales";
+  if (angrySignals.some((s) => text.includes(s))) return "angry";
+  if (salesSignals.some((s) => text.includes(s))) return "sales";
   return "normal";
 }
 
 function buildSystemPrompt(tone, language, intent) {
   const isArabic = language === "Arabic";
 
-  // ── Language rule ─────────────────────────────────────────────────────────
+  // ── Language rule ────────────────────────────────────────────────────────
   const languageInstruction = isArabic
     ? [
         "You MUST reply ONLY in Egyptian Arabic (عامية مصرية).",
@@ -46,9 +44,10 @@ function buildSystemPrompt(tone, language, intent) {
         "Sound like a real human support agent.",
       ].join(" ");
 
-  // ── Intent rule ───────────────────────────────────────────────────────────
+  // ── Intent/Mode rule ─────────────────────────────────────────────────────
   let intentInstruction;
-  if (intent === "angry") {
+
+  if (intent === "angry" || intent === "complaint") {
     intentInstruction = isArabic
       ? [
           "Customer is angry.",
@@ -66,13 +65,38 @@ function buildSystemPrompt(tone, language, intent) {
           "Ask for their order number to look into it.",
           "Keep it short, warm, and professional.",
         ].join(" ");
-  } else if (intent === "sales") {
-    intentInstruction = [
-      "Customer wants to buy.",
-      "Answer the question FIRST (price or availability).",
-      "Then highlight value.",
-      "Then include ONE clear CTA.",
-    ].join(" ");
+
+  } else if (intent === "sales" || intent === "close_sale") {
+    intentInstruction = isArabic
+      ? [
+          "Customer wants to buy or is close to buying.",
+          "Answer price/availability question FIRST.",
+          "Then highlight ONE key value or benefit.",
+          "End with ONE clear CTA like: 'هنبعتلك رابط الطلب دلوقتي' or 'ابعتلنا على الخاص نكمل معاك'.",
+          "Keep it short, natural Egyptian Arabic.",
+        ].join(" ")
+      : [
+          "Customer wants to buy.",
+          "Answer the question FIRST (price or availability).",
+          "Then highlight value.",
+          "Then include ONE clear CTA.",
+        ].join(" ");
+
+  } else if (intent === "follow_up") {
+    intentInstruction = isArabic
+      ? [
+          "This is a follow-up message to re-engage the customer.",
+          "Be warm and brief.",
+          "Remind them of something valuable without being pushy.",
+          "End with a soft CTA like: 'لو محتاج أي حاجة احنا هنا' or 'تقدر ترد علينا في أي وقت'.",
+          "Use simple natural Egyptian Arabic.",
+        ].join(" ")
+      : [
+          "This is a follow-up to re-engage the customer.",
+          "Be warm, brief, and non-pushy.",
+          "Remind them of value and leave a soft CTA.",
+        ].join(" ");
+
   } else {
     intentInstruction = [
       "Customer is asking a normal question.",
@@ -82,17 +106,29 @@ function buildSystemPrompt(tone, language, intent) {
 
   // ── Tone rule ─────────────────────────────────────────────────────────────
   const toneInstruction =
-    tone === "sales" || intent === "sales"
+    tone === "sales" || intent === "sales" || intent === "close_sale"
       ? "Use a persuasive tone."
       : tone === "friendly"
       ? "Use a friendly tone."
       : "Use a professional tone.";
+
+  // ── Style rule (appended to all prompts) ─────────────────────────────────
+  const styleRule = isArabic
+    ? [
+        "RESPONSE STYLE RULE:",
+        "- Use short Egyptian phrases.",
+        "- No complex sentences.",
+        "- No formal Arabic.",
+        "- No creative wording.",
+      ].join(" ")
+    : "Keep replies concise and human.";
 
   return [
     "You are a smart customer support agent.",
     languageInstruction,
     intentInstruction,
     toneInstruction,
+    styleRule,
     "Return ONLY the reply text. No labels. No explanations.",
     "STRICT RULES:",
     isArabic
@@ -106,7 +142,7 @@ function buildSystemPrompt(tone, language, intent) {
 
 export async function POST(request) {
   try {
-    const { message, tone, language, maxTokens } = await request.json();
+    const { message, tone, language, maxTokens, mode } = await request.json();
 
     if (!message || typeof message !== "string") {
       return NextResponse.json({ error: "Message is required." }, { status: 400 });
@@ -125,7 +161,11 @@ export async function POST(request) {
     }
 
     const safeTokens = Math.min(Math.max(Number(maxTokens) || 180, 60), 400);
-    const intent = detectUserIntent(message);
+
+    // Mode override: if mode is not "auto", use it directly as intent
+    const intent = (mode && mode !== "auto" && MODES.includes(mode))
+      ? mode
+      : detectUserIntent(message);
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
@@ -155,7 +195,7 @@ export async function POST(request) {
       return NextResponse.json({ error: "AI failed", details: errorText }, { status: 502 });
     }
 
-    const data = await response.json();
+    const data  = await response.json();
     const reply = data?.choices?.[0]?.message?.content?.trim();
 
     if (!reply) {
@@ -164,7 +204,7 @@ export async function POST(request) {
 
     return NextResponse.json({
       success: true,
-      data: { reply, tone, language, intent },
+      data: { reply, tone, language, intent, mode: mode || "auto" },
     });
   } catch (err) {
     console.error("[generate] error:", err);
