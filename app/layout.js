@@ -1,3 +1,5 @@
+import { Analytics } from '@vercel/analytics/next';
+
 export const metadata = {
   title: "ReplyJet — AI Reply Engine",
   description: "AI-powered customer reply generator. Arabic & English. Angry, Sales, Normal modes.",
@@ -15,7 +17,10 @@ export default function RootLayout({ children }) {
           rel="stylesheet"
         />
       </head>
-      <body style={{ margin: 0, fontFamily: "'Inter', sans-serif" }}>{children}</body>
+      <body style={{ margin: 0, fontFamily: "'Inter', sans-serif" }}>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
