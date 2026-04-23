@@ -69,6 +69,13 @@ export default function HomePage() {
   const intentMeta = INTENTS[intent];
   const isArabic   = language === "Arabic";
 
+  // charCount colour: faint → warning at 800+ → error at 1000+
+  const charColor =
+    charCount === 0   ? "transparent"
+    : charCount >= 1000 ? t.error
+    : charCount >= 800  ? t.warning
+    : t.faint;
+
   return (
     <div style={{ minHeight: "100vh", background: t.bg, color: t.text }}>
 
@@ -109,6 +116,7 @@ export default function HomePage() {
               onChange={(e) => { setMessage(e.target.value); setCharCount(e.target.value.length); }}
               onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) handleGenerate(); }}
               placeholder="Paste the customer message here..."
+              className="rj-textarea"
               style={{
                 width: "100%", background: t.surface2, border: `1px solid ${t.border}`,
                 borderRadius: t.radiusSm, color: t.text, fontSize: "14px", lineHeight: 1.6,
@@ -118,7 +126,10 @@ export default function HomePage() {
               onFocus={(e) => (e.target.style.borderColor = t.accent)}
               onBlur={(e)  => (e.target.style.borderColor = t.border)}
             />
-            <span style={{ position: "absolute", bottom: 10, right: 12, fontSize: "11px", color: charCount > 0 ? t.faint : "transparent", pointerEvents: "none", transition: "color 0.15s" }}>
+            <span style={{
+              position: "absolute", bottom: 10, right: 12, fontSize: "11px",
+              color: charColor, pointerEvents: "none", transition: "color 0.2s",
+            }}>
               {charCount} chars
             </span>
           </div>
@@ -157,6 +168,7 @@ export default function HomePage() {
         <button
           onClick={handleGenerate}
           disabled={loading}
+          className="rj-btn-primary"
           style={{
             width: "100%", padding: "14px",
             background: loading ? t.faint : t.accent,
@@ -168,8 +180,6 @@ export default function HomePage() {
             transition: "background 0.15s",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
           }}
-          onMouseEnter={(e) => { if (!loading) e.currentTarget.style.background = t.accentHov; }}
-          onMouseLeave={(e) => { if (!loading) e.currentTarget.style.background = t.accent; }}
         >
           {loading ? (
             <>
@@ -218,9 +228,10 @@ export default function HomePage() {
                   <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy reply</>
                 )}
               </button>
-              <Link href="/history" style={{ fontSize: "12px", color: t.muted, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4, transition: "color 0.15s" }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = t.accent)}
-                onMouseLeave={(e) => (e.currentTarget.style.color = t.muted)}
+              <Link
+                href="/history"
+                className="rj-link-muted"
+                style={{ fontSize: "12px", color: t.muted, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4, transition: "color 0.15s" }}
               >
                 🕑 View history
               </Link>
@@ -234,11 +245,13 @@ export default function HomePage() {
         @keyframes spin { to { transform: rotate(360deg); } }
         * { box-sizing: border-box; }
         ::selection { background: rgba(0,180,216,0.25); }
-        textarea::placeholder { color: #444; }
-        textarea::-webkit-scrollbar { width: 4px; }
-        textarea::-webkit-scrollbar-track { background: transparent; }
-        textarea::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        .rj-textarea::placeholder { color: #444; }
+        .rj-textarea::-webkit-scrollbar { width: 4px; }
+        .rj-textarea::-webkit-scrollbar-track { background: transparent; }
+        .rj-textarea::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
         kbd { font-family: inherit; }
+        .rj-btn-primary:not(:disabled):hover { background: ${t.accentHov} !important; }
+        .rj-link-muted:hover { color: ${t.accent} !important; }
       `}</style>
     </div>
   );

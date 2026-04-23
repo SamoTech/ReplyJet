@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import NavBar from "@/components/NavBar";
 import {
   t, card, labelStyle, segmentBase,
-  PREFS_KEY, DEFAULT_PREFS, loadPrefs,
+  TONES, LANGUAGES,
+  DEFAULT_PREFS, loadPrefs, savePrefs,
 } from "@/lib/tokens";
 
 export default function SettingsPage() {
@@ -12,12 +13,11 @@ export default function SettingsPage() {
   const [saved,  setSaved]  = useState(false);
   const [notice, setNotice] = useState("");
 
-  // Load saved prefs on mount
   useEffect(() => { setPrefs(loadPrefs()); }, []);
 
   const handleSave = () => {
     try {
-      localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+      savePrefs(prefs);
       setSaved(true); setNotice("Settings saved.");
       setTimeout(() => { setSaved(false); setNotice(""); }, 2500);
     } catch {
@@ -27,7 +27,7 @@ export default function SettingsPage() {
 
   const handleReset = () => {
     setPrefs({ ...DEFAULT_PREFS });
-    try { localStorage.removeItem(PREFS_KEY); } catch {}
+    try { savePrefs(DEFAULT_PREFS); } catch {}
     setNotice("Reset to defaults.");
     setTimeout(() => setNotice(""), 2000);
   };
@@ -49,9 +49,9 @@ export default function SettingsPage() {
         <div style={card}>
           <span style={labelStyle}>Default Tone</span>
           <div style={{ display: "flex", background: t.surface2, borderRadius: t.radiusSm, border: `1px solid ${t.border}`, padding: 3, gap: 2 }}>
-            {[["professional","💼","Professional"],["friendly","😊","Friendly"],["sales","🎯","Sales"]].map(([v, ic, lb]) => (
-              <button key={v} onClick={() => setPrefs(p => ({ ...p, defaultTone: v }))} style={segmentBase(prefs.defaultTone === v)}>
-                {ic} {lb}
+            {TONES.map(({ value, icon, label }) => (
+              <button key={value} onClick={() => setPrefs(p => ({ ...p, defaultTone: value }))} style={segmentBase(prefs.defaultTone === value)}>
+                {icon} {label}
               </button>
             ))}
           </div>
@@ -61,9 +61,9 @@ export default function SettingsPage() {
         <div style={card}>
           <span style={labelStyle}>Default Language</span>
           <div style={{ display: "flex", background: t.surface2, borderRadius: t.radiusSm, border: `1px solid ${t.border}`, padding: 3, gap: 2 }}>
-            {[["Arabic","🇪🇬","Arabic"],["English","🇬🇧","English"]].map(([v, fl, lb]) => (
-              <button key={v} onClick={() => setPrefs(p => ({ ...p, defaultLanguage: v }))} style={segmentBase(prefs.defaultLanguage === v)}>
-                {fl} {lb}
+            {LANGUAGES.map(({ value, flag, label }) => (
+              <button key={value} onClick={() => setPrefs(p => ({ ...p, defaultLanguage: value }))} style={segmentBase(prefs.defaultLanguage === value)}>
+                {flag} {label}
               </button>
             ))}
           </div>
@@ -111,9 +111,8 @@ export default function SettingsPage() {
         <div style={{ display: "flex", gap: 10 }}>
           <button
             onClick={handleSave}
+            className="rj-btn-save"
             style={{ flex: 1, padding: "12px", background: t.accent, color: "#000", border: "none", borderRadius: t.radius, fontSize: 14, fontWeight: 700, cursor: "pointer", fontFamily: "inherit", transition: "background 0.15s" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = t.accentHov)}
-            onMouseLeave={(e) => (e.currentTarget.style.background = t.accent)}
           >
             Save settings
           </button>
@@ -126,7 +125,10 @@ export default function SettingsPage() {
         </div>
 
       </main>
-      <style>{`* { box-sizing: border-box; }`}</style>
+      <style>{`
+        * { box-sizing: border-box; }
+        .rj-btn-save:hover { background: ${t.accentHov} !important; }
+      `}</style>
     </div>
   );
 }
