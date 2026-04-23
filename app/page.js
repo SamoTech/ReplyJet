@@ -16,21 +16,22 @@ export default function HomePage() {
   const [reply,     setReply]     = useState("");
   const [intent,    setIntent]    = useState("");
   const [loading,   setLoading]   = useState(false);
+  const [regen,     setRegen]     = useState(false);
   const [error,     setError]     = useState("");
   const [copied,    setCopied]    = useState(false);
   const [charCount, setCharCount] = useState(0);
 
-  // Load saved prefs as defaults
   useEffect(() => {
     const prefs = loadPrefs();
     setTone(prefs.defaultTone);
     setLanguage(prefs.defaultLanguage);
   }, []);
 
-  const handleGenerate = async () => {
-    setError(""); setReply(""); setIntent(""); setCopied(false);
+  const generate = async ({ isRegen = false } = {}) => {
+    setError(""); setCopied(false);
+    if (!isRegen) { setReply(""); setIntent(""); }
     if (!message.trim()) { setError("Please enter a customer message."); return; }
-    setLoading(true);
+    isRegen ? setRegen(true) : setLoading(true);
     try {
       const { maxTokens } = loadPrefs();
       const res  = await fetch("/api/generate", {
@@ -51,8 +52,12 @@ export default function HomePage() {
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
+      setRegen(false);
     }
   };
+
+  const handleGenerate  = () => generate({ isRegen: false });
+  const handleRegenerate = () => generate({ isRegen: true });
 
   const handleCopy = async () => {
     if (!reply) return;
@@ -68,10 +73,10 @@ export default function HomePage() {
 
   const intentMeta = INTENTS[intent];
   const isArabic   = language === "Arabic";
+  const isBusy     = loading || regen;
 
-  // charCount colour: faint → warning at 800+ → error at 1000+
   const charColor =
-    charCount === 0   ? "transparent"
+    charCount === 0     ? "transparent"
     : charCount >= 1000 ? t.error
     : charCount >= 800  ? t.warning
     : t.faint;
@@ -167,15 +172,15 @@ export default function HomePage() {
         {/* Generate Button */}
         <button
           onClick={handleGenerate}
-          disabled={loading}
+          disabled={isBusy}
           className="rj-btn-primary"
           style={{
             width: "100%", padding: "14px",
-            background: loading ? t.faint : t.accent,
-            color: loading ? t.muted : "#000",
+            background: isBusy ? t.faint : t.accent,
+            color: isBusy ? t.muted : "#000",
             border: "none", borderRadius: t.radius,
             fontSize: "15px", fontWeight: 700,
-            cursor: loading ? "not-allowed" : "pointer",
+            cursor: isBusy ? "not-allowed" : "pointer",
             fontFamily: "inherit", letterSpacing: "0.02em",
             transition: "background 0.15s",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
@@ -214,26 +219,51 @@ export default function HomePage() {
                 </span>
               )}
             </div>
-            <div style={{ background: t.surface2, border: `1px solid ${t.border}`, borderRadius: t.radiusSm, padding: "14px 16px", fontSize: "15px", lineHeight: 1.75, color: t.text, direction: isArabic ? "rtl" : "ltr", textAlign: isArabic ? "right" : "left", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+
+            {/* Reply text — dims while regenerating */}
+            <div style={{ background: t.surface2, border: `1px solid ${t.border}`, borderRadius: t.radiusSm, padding: "14px 16px", fontSize: "15px", lineHeight: 1.75, color: t.text, direction: isArabic ? "rtl" : "ltr", textAlign: isArabic ? "right" : "left", whiteSpace: "pre-wrap", wordBreak: "break-word", opacity: regen ? 0.4 : 1, transition: "opacity 0.2s" }}>
               {reply}
             </div>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12 }}>
-              <button
-                onClick={handleCopy}
-                style={{ padding: "8px 16px", background: copied ? t.successDim : t.surface2, color: copied ? t.success : t.muted, border: `1px solid ${copied ? t.success + "40" : t.border}`, borderRadius: t.radiusSm, cursor: "pointer", fontSize: "13px", fontWeight: 500, fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 6, transition: "all 0.15s" }}
-              >
-                {copied ? (
-                  <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!</>
-                ) : (
-                  <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy reply</>
-                )}
-              </button>
+
+            {/* Actions row */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 12, gap: 8 }}>
+
+              {/* Left: Copy + Regenerate */}
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={handleCopy}
+                  disabled={regen}
+                  style={{ padding: "8px 16px", background: copied ? t.successDim : t.surface2, color: copied ? t.success : t.muted, border: `1px solid ${copied ? t.success + "40" : t.border}`, borderRadius: t.radiusSm, cursor: regen ? "not-allowed" : "pointer", fontSize: "13px", fontWeight: 500, fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 6, transition: "all 0.15s" }}
+                >
+                  {copied ? (
+                    <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg> Copied!</>
+                  ) : (
+                    <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy reply</>
+                  )}
+                </button>
+
+                {/* Regenerate */}
+                <button
+                  onClick={handleRegenerate}
+                  disabled={isBusy}
+                  className="rj-btn-regen"
+                  style={{ padding: "8px 14px", background: t.surface2, color: t.muted, border: `1px solid ${t.border}`, borderRadius: t.radiusSm, cursor: isBusy ? "not-allowed" : "pointer", fontSize: "13px", fontWeight: 500, fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 6, transition: "all 0.15s" }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ animation: regen ? "spin 0.7s linear infinite" : "none" }}>
+                    <polyline points="23 4 23 10 17 10"/>
+                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                  </svg>
+                  {regen ? "Regenerating..." : "Regenerate"}
+                </button>
+              </div>
+
+              {/* Right: History link */}
               <Link
                 href="/history"
                 className="rj-link-muted"
-                style={{ fontSize: "12px", color: t.muted, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4, transition: "color 0.15s" }}
+                style={{ fontSize: "12px", color: t.muted, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4, transition: "color 0.15s", whiteSpace: "nowrap" }}
               >
-                🕑 View history
+                🕑 History
               </Link>
             </div>
           </div>
@@ -251,6 +281,7 @@ export default function HomePage() {
         .rj-textarea::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
         kbd { font-family: inherit; }
         .rj-btn-primary:not(:disabled):hover { background: ${t.accentHov} !important; }
+        .rj-btn-regen:not(:disabled):hover { color: ${t.text} !important; border-color: ${t.borderHov} !important; }
         .rj-link-muted:hover { color: ${t.accent} !important; }
       `}</style>
     </div>
