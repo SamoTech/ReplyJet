@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import NavBar from "@/components/NavBar";
 import { t, card, INTENTS, HISTORY_KEY } from "@/lib/tokens";
 
 export default function HistoryPage() {
-  const [items,  setItems]  = useState([]);
-  const [copied, setCopied] = useState(null);
+  const [items,        setItems]        = useState([]);
+  const [copied,       setCopied]       = useState(null);
+  const [confirmClear, setConfirmClear] = useState(false);
 
   useEffect(() => {
     try {
@@ -27,10 +29,9 @@ export default function HistoryPage() {
   };
 
   const handleClear = () => {
-    if (confirm("Clear all history?")) {
-      localStorage.removeItem(HISTORY_KEY);
-      setItems([]);
-    }
+    localStorage.removeItem(HISTORY_KEY);
+    setItems([]);
+    setConfirmClear(false);
   };
 
   return (
@@ -48,13 +49,33 @@ export default function HistoryPage() {
               {items.length} repl{items.length === 1 ? "y" : "ies"} saved
             </p>
           </div>
+
+          {/* Inline confirm clear */}
           {items.length > 0 && (
-            <button
-              onClick={handleClear}
-              style={{ color: t.error, background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: t.radiusSm, fontSize: 13, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}
-            >
-              Clear all
-            </button>
+            confirmClear ? (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 12, color: t.muted }}>Sure?</span>
+                <button
+                  onClick={handleClear}
+                  style={{ color: t.error, background: "rgba(255,107,107,0.12)", border: "1px solid rgba(255,107,107,0.3)", borderRadius: t.radiusSm, fontSize: 12, padding: "5px 12px", cursor: "pointer", fontFamily: "inherit", fontWeight: 600 }}
+                >
+                  Yes, clear
+                </button>
+                <button
+                  onClick={() => setConfirmClear(false)}
+                  style={{ color: t.muted, background: t.surface2, border: `1px solid ${t.border}`, borderRadius: t.radiusSm, fontSize: 12, padding: "5px 12px", cursor: "pointer", fontFamily: "inherit" }}
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmClear(true)}
+                style={{ color: t.error, background: "rgba(255,107,107,0.08)", border: "1px solid rgba(255,107,107,0.2)", borderRadius: t.radiusSm, fontSize: 13, padding: "6px 14px", cursor: "pointer", fontFamily: "inherit" }}
+              >
+                Clear all
+              </button>
+            )
           )}
         </div>
 
@@ -64,11 +85,10 @@ export default function HistoryPage() {
             <div style={{ fontSize: 40, marginBottom: 16 }}>📥</div>
             <h2 style={{ fontSize: 16, fontWeight: 600, color: t.text, margin: "0 0 8px" }}>No history yet</h2>
             <p style={{ fontSize: 14, margin: "0 0 24px", lineHeight: 1.6 }}>Your generated replies will appear here automatically.</p>
-            <a href="/" style={{ color: t.accent, textDecoration: "none", fontSize: 14, fontWeight: 500 }}>Generate your first reply →</a>
+            <Link href="/" style={{ color: t.accent, textDecoration: "none", fontSize: 14, fontWeight: 500 }}>Generate your first reply →</Link>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {/* items are stored newest-first — no reverse needed */}
             {items.map((item) => {
               const meta = INTENTS[item.intent] || INTENTS.normal;
               return (

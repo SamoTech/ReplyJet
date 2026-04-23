@@ -15,7 +15,8 @@ function detectUserIntent(message = "") {
 
   const salesSignals = [
     "سعر", "بكام", "متاح", "تفاصيل",
-    "price", "how much", "available",
+    "عايز اشتري", "عايزة اشتري", "اشتري", "خصم", "كود خصم", "عروض",
+    "price", "how much", "available", "buy", "discount", "offer",
   ];
 
   const isAngry = angrySignals.some((s) => text.includes(s));
@@ -109,6 +110,9 @@ export async function POST(request) {
 
     if (!message || typeof message !== "string") {
       return NextResponse.json({ error: "Message is required." }, { status: 400 });
+    }
+    if (message.length > 1000) {
+      return NextResponse.json({ error: "Message too long (max 1000 chars)." }, { status: 400 });
     }
     if (!TONES.includes(tone)) {
       return NextResponse.json({ error: "Invalid tone." }, { status: 400 });
