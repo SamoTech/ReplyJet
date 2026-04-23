@@ -6,7 +6,7 @@ import NavBar from "@/components/NavBar";
 import {
   t, card, labelStyle, segmentBase,
   TONES, LANGUAGES, MODES, INTENTS,
-  loadPrefs, saveToHistory,
+  loadPrefs, saveToHistory, toggleSaved, isSaved,
 } from "@/lib/tokens";
 
 export default function HomePage() {
@@ -16,17 +16,18 @@ export default function HomePage() {
   const [mode,      setMode]      = useState("auto");
   const [reply,     setReply]     = useState("");
   const [intent,    setIntent]    = useState("");
+  const [replyId,   setReplyId]   = useState(null);
   const [loading,   setLoading]   = useState(false);
   const [regen,     setRegen]     = useState(false);
   const [error,     setError]     = useState("");
   const [copied,    setCopied]    = useState(false);
+  const [saved,     setSaved]     = useState(false);
   const [charCount, setCharCount] = useState(0);
 
   useEffect(() => {
     const prefs = loadPrefs();
     setTone(prefs.defaultTone);
     setLanguage(prefs.defaultLanguage);
-    // pick up template from Templates page
     const tpl = typeof window !== "undefined" && sessionStorage.getItem("rj_template");
     if (tpl) {
       setMessage(tpl);
@@ -36,8 +37,8 @@ export default function HomePage() {
   }, []);
 
   const generate = async ({ isRegen = false } = {}) => {
-    setError(""); setCopied(false);
-    if (!isRegen) { setReply(""); setIntent(""); }
+    setError(""); setCopied(false); setSaved(false);
+    if (!isRegen) { setReply(""); setIntent(""); setReplyId(null); }
     if (!message.trim()) { setError("Please enter a customer message."); return; }
     isRegen ? setRegen(true) : setLoading(true);
     try {
@@ -51,8 +52,11 @@ export default function HomePage() {
       if (!res.ok) { setError(data.error || "Failed to generate reply."); return; }
       const generatedReply = data?.data?.reply  || "";
       const detectedIntent = data?.data?.intent || "";
+      const newId = Date.now();
       setReply(generatedReply);
       setIntent(detectedIntent);
+      setReplyId(newId);
+      setSaved(false);
       if (generatedReply) {
         saveToHistory({ message, tone, language, reply: generatedReply, intent: detectedIntent, mode });
       }
@@ -77,6 +81,12 @@ export default function HomePage() {
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSave = () => {
+    if (!reply || !replyId) return;
+    const nowSaved = toggleSaved({ id: replyId, message, tone, language, reply, intent, mode });
+    setSaved(nowSaved);
   };
 
   const intentMeta = INTENTS[intent];
@@ -299,6 +309,17 @@ export default function HomePage() {
                     <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
                   </svg>
                   {regen ? "Regenerating..." : "Regenerate"}
+                </button>
+
+                {/* Bookmark / Save */}
+                <button
+                  onClick={handleSave}
+                  disabled={regen}
+                  title={saved ? "Remove from saved" : "Save reply"}
+                  style={{ padding: "8px 12px", background: saved ? "rgba(251,191,36,0.12)" : t.surface2, color: saved ? "#fbbf24" : t.muted, border: `1px solid ${saved ? "rgba(251,191,36,0.3)" : t.border}`, borderRadius: t.radiusSm, cursor: regen ? "not-allowed" : "pointer", fontSize: "14px", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 5, transition: "all 0.15s" }}
+                >
+                  {saved ? "🔖" : "🔖"}
+                  <span style={{ fontSize: "12px", fontWeight: 500 }}>{saved ? "Saved" : "Save"}</span>
                 </button>
               </div>
 
