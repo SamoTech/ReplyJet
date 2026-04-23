@@ -26,6 +26,13 @@ export default function HomePage() {
     const prefs = loadPrefs();
     setTone(prefs.defaultTone);
     setLanguage(prefs.defaultLanguage);
+    // pick up template from Templates page
+    const tpl = typeof window !== "undefined" && sessionStorage.getItem("rj_template");
+    if (tpl) {
+      setMessage(tpl);
+      setCharCount(tpl.length);
+      sessionStorage.removeItem("rj_template");
+    }
   }, []);
 
   const generate = async ({ isRegen = false } = {}) => {
@@ -77,8 +84,7 @@ export default function HomePage() {
   const isBusy     = loading || regen;
 
   const charColor =
-    charCount === 0     ? t.faint
-    : charCount >= 1000 ? t.error
+    charCount >= 1000 ? t.error
     : charCount >= 800  ? t.warning
     : t.faint;
 
@@ -113,7 +119,15 @@ export default function HomePage() {
 
         {/* Input Card */}
         <div style={card}>
-          <label style={labelStyle} htmlFor="message">Customer message</label>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <label style={{ ...labelStyle, marginBottom: 0 }} htmlFor="message">Customer message</label>
+            <Link href="/templates" style={{ fontSize: "11px", color: t.accent, textDecoration: "none", display: "inline-flex", alignItems: "center", gap: 4, transition: "opacity 0.15s" }}
+              onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.7")}
+              onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+            >
+              📋 Use template
+            </Link>
+          </div>
           <div style={{ position: "relative" }}>
             <textarea
               id="message"
